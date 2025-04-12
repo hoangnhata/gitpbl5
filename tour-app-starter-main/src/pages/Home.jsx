@@ -1,22 +1,12 @@
-import { Box, Container, Grid } from "@mui/material";
-import { SearchResults } from "../section/Search";
-import Filter from "../section/Filter";
-
-const Home = () => {
-    return (
-        <Container maxWidth="xl">
-            <Box>
-                <Grid container>
-                    <Grid item md={3} xs={12}>
-                        <Filter />
-                    </Grid>
-                    <Grid item md={9} xs={12}>
-                        <SearchResults />
-                    </Grid>
-                </Grid>
-            </Box>
-        </Container>
-    );
-};
-
-export default Home;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+</head>
+<body>
+    <h1>Home</h1>
+    
+</body>
+</html>
