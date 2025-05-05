@@ -1,36 +1,29 @@
-import PropTypes from 'prop-types';
-import { Marker } from 'react-map-gl';
-// @mui
-import { styled } from '@mui/material/styles';
+import PropTypes from "prop-types";
+import { Marker } from "react-map-gl";
 
-// ----------------------------------------------------------------------
-
-const SIZE = 20;
-
-const ICON = `M20.2,15.7L20.2,15.7c1.1-1.6,1.8-3.6,1.8-5.7c0-5.6-4.5-10-10-10S2,4.5,2,10c0,2,0.6,3.9,1.6,5.4c0,0.1,0.1,0.2,0.2,0.3
-  c0,0,0.1,0.1,0.1,0.2c0.2,0.3,0.4,0.6,0.7,0.9c2.6,3.1,7.4,7.6,7.4,7.6s4.8-4.5,7.4-7.5c0.2-0.3,0.5-0.6,0.7-0.9
-  C20.1,15.8,20.2,15.8,20.2,15.7z`;
-
-const IconStyle = styled('svg')(({ theme }) => ({
-  height: SIZE,
-  stroke: 'none',
-  cursor: 'pointer',
-  fill: theme.palette.error.main,
-  transform: `translate(${-SIZE / 2}px,${-SIZE}px)`,
-}));
-
-// ----------------------------------------------------------------------
+const MapControlMarker = ({ latitude, longitude, onClick }) => {
+  return (
+    <Marker latitude={latitude} longitude={longitude} onClick={onClick}>
+      <svg
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M12 0C7.038 0 3 4.066 3 9.065C3 16.168 11.154 23.502 11.501 23.81C11.644 23.937 11.822 24 12 24C12.178 24 12.356 23.937 12.499 23.811C12.846 23.502 21 16.168 21 9.065C21 4.066 16.962 0 12 0Z"
+          fill="#2196F3"
+        />
+      </svg>
+    </Marker>
+  );
+};
 
 MapControlMarker.propTypes = {
+  latitude: PropTypes.number,
+  longitude: PropTypes.number,
   onClick: PropTypes.func,
 };
 
-export default function MapControlMarker({ onClick, ...other }) {
-  return (
-    <Marker {...other}>
-      <IconStyle viewBox="0 0 24 24" onClick={onClick}>
-        <path d={ICON} />
-      </IconStyle>
-    </Marker>
-  );
-}
+export default MapControlMarker;

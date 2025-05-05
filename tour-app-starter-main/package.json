@@ -28,6 +28,7 @@
     "@mui/x-date-pickers": "latest",
     "@mui/x-date-pickers-pro": "latest",
     "@phosphor-icons/react": "^2.0.15",
+    "@react-google-maps/api": "^2.20.6",
     "@reduxjs/toolkit": "^1.9.7",
     "apexcharts": "^3.44.0",
     "axios": "^1.6.2",

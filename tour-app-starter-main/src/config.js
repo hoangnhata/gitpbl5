@@ -29,7 +29,6 @@ export const NAVBAR = {
   DASHBOARD_ITEM_HORIZONTAL_HEIGHT: 32,
 };
 
-
 export const ICON = {
   NAVBAR_ITEM: 22,
   NAVBAR_ITEM_HORIZONTAL: 20,
@@ -37,8 +36,7 @@ export const ICON = {
 
 export const HOST_API = "";
 
-export const MAPBOX_API = "pk.eyJ1IjoiY29kaW5nbW9uayIsImEiOiJjbHFra3JiNzYwaGh5MnJwOThpN3ZyaXhwIn0.4y7jYQgHTtZgTP3NoKndaQ"; // PUBLIC KEY
-
+export const MAPTILER_API_KEY = "M9RgBxrNRXsSBqSCkgme";
 
 // SETTINGS
 // Please remove `localStorage` when you set settings.

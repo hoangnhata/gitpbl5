@@ -1,20 +1,16 @@
-import { GeolocateControl } from 'react-map-gl';
-// @mui
-import { styled } from '@mui/material/styles';
+import { GeolocateControl } from "react-map-gl";
 
-// ----------------------------------------------------------------------
+const MapControlGeolocate = () => {
+  return (
+    <GeolocateControl
+      style={{
+        right: 8,
+        top: 44,
+      }}
+      positionOptions={{ enableHighAccuracy: true }}
+      trackUserLocation
+    />
+  );
+};
 
-const GeolocateControlStyle = styled(GeolocateControl)(({ theme }) => ({
-  zIndex: 99,
-  borderRadius: 8,
-  overflow: 'hidden',
-  top: theme.spacing(6),
-  left: theme.spacing(1.5),
-  boxShadow: theme.customShadows.z8,
-}));
-
-// ----------------------------------------------------------------------
-
-export default function MapControlGeolocate({ ...props }) {
-  return <GeolocateControlStyle positionOptions={{ enableHighAccuracy: true }} trackUserLocation={true} {...props} />;
-}
+export default MapControlGeolocate;

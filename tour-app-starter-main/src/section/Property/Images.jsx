@@ -1,64 +1,161 @@
-import { Box, Button, Grid } from "@mui/material";
+import {
+  Box,
+  Button,
+  Grid,
+  Typography,
+  Dialog,
+  DialogContent,
+  IconButton,
+} from "@mui/material";
 import Image from "../../components/Image";
-import { ImageSquare } from "@phosphor-icons/react";
+import { ImageSquare, X } from "@phosphor-icons/react";
+import PropTypes from "prop-types";
+import { useState } from "react";
 
-const images = [
-  "https://homes-and-villas.marriott.com/hvmb-pictures/40311112/638324213186183413.jpg",
-  "https://cf.bstatic.com/xdata/images/hotel/max1024x768/295090917.jpg?k=d17621b71b0eaa0c7a37d8d8d02d33896cef75145f61e7d96d296d88375a7d39&o=&hp=1",
-  "https://amazingarchitecture.com/storage/711/Deep-Villa-Atrey-and-Associates-New-Delhi-ndia-Amazing-Architecture-House.jpg",
-  "https://dlifeinteriors.com/wp-content/uploads/2022/12/Villa-Projects-in-Bengaluru-1024x683.jpg",
-  "https://acihome.vn/uploads/15/thiet-ke-khach-san-hien-dai-co-cac-ban-cong-view-bien-sieu-dep-seaside-mirage-hotel-3.JPG",
-];
+const Images = ({ images }) => {
+  const [open, setOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
 
-const Images = () => {
+  const handleOpen = () => setOpen(true);
+  const handleClose = () => {
+    setOpen(false);
+    setSelectedImage(null);
+  };
+
+  const handleImageClick = (image) => {
+    setSelectedImage(image);
+  };
+
   return (
     <Box
       sx={{
         borderRadius: 2,
         overflow: "hidden",
-        position: "relative,",
+        position: "relative",
       }}
     >
       <Grid container spacing={1}>
-        <Grid item md={6}>
-          <Image src={images[1]} alt="Villa" sx={{ height: 1 }} />
-        </Grid>
-        <Grid container item md={6} spacing={2}>
-          <Grid item md={6}>
-            <Image src={images[1]} alt="Villa" sx={{ height: 1 }} />
-          </Grid>
-          <Grid item md={6}>
-            <Image src={images[1]} alt="Villa" sx={{ height: 1 }} />
-          </Grid>
-          <Grid item md={6}>
-            <Image src={images[3]} alt="Villa" sx={{ height: 1 }} />
-          </Grid>
-          <Grid item md={6}>
-            <Box sx={{ position: "relative" }}>
+        {images && images.length > 0 ? (
+          <>
+            <Grid item xs={12} md={6}>
               <Image
-                src={images[3]}
-                alt="Villa"
-                sx={{ width: "100%", height: "auto" }}
+                src={`http://localhost:8080/${images[0]}`}
+                alt="Main property image"
+                sx={{ height: 450, width: "100%", objectFit: "cover" }}
               />
-              <Button
-                startIcon={<ImageSquare weight="bold"/> }
-                color="inherit"
-                variant="contained"
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Grid container spacing={1}>
+                {images.slice(1, 5).map((image, index) => (
+                  <Grid item xs={6} key={index}>
+                    <Image
+                      src={`http://localhost:8080/${image}`}
+                      alt={`Property image ${index + 2}`}
+                      sx={{ height: 220, width: "100%", objectFit: "cover" }}
+                    />
+                  </Grid>
+                ))}
+              </Grid>
+            </Grid>
+          </>
+        ) : (
+          <Typography>No images available</Typography>
+        )}
+      </Grid>
+
+      <Box sx={{ position: "absolute", bottom: 16, right: 16 }}>
+        <Button
+          startIcon={<ImageSquare weight="bold" />}
+          variant="contained"
+          onClick={handleOpen}
+          sx={{
+            bgcolor: "rgba(255, 255, 255, 0.9)",
+            color: "text.primary",
+            "&:hover": {
+              bgcolor: "white",
+            },
+          }}
+        >
+          Show all photos
+        </Button>
+      </Box>
+
+      <Dialog open={open} onClose={handleClose} maxWidth="lg" fullWidth>
+        <DialogContent sx={{ position: "relative", p: 3 }}>
+          <IconButton
+            onClick={handleClose}
+            sx={{
+              position: "absolute",
+              right: 8,
+              top: 8,
+              bgcolor: "rgba(255,255,255,0.8)",
+              "&:hover": { bgcolor: "white" },
+              zIndex: 1,
+            }}
+          >
+            <X size={24} />
+          </IconButton>
+
+          {selectedImage ? (
+            <Box sx={{ textAlign: "center", mb: 2 }}>
+              <Image
+                src={`http://localhost:8080/${selectedImage}`}
+                alt="Selected property image"
                 sx={{
-                  position: "absolute",
-                  bottom: 10,
-                  right: 10,
-                  bgcolor: (theme) => theme.palette.grey[400],
+                  maxHeight: "70vh",
+                  width: "100%",
+                  objectFit: "contain",
                 }}
-              >
-                Show all photos
+              />
+              <Button onClick={() => setSelectedImage(null)} sx={{ mt: 2 }}>
+                Back to gallery
               </Button>
             </Box>
-          </Grid>
-        </Grid>
-      </Grid>
+          ) : (
+            <Grid container spacing={2}>
+              {images.map((image, index) => (
+                <Grid item xs={12} sm={6} md={4} key={index}>
+                  <Box
+                    sx={{
+                      position: "relative",
+                      cursor: "pointer",
+                      "&:hover": {
+                        opacity: 0.9,
+                      },
+                    }}
+                    onClick={() => handleImageClick(image)}
+                  >
+                    <Image
+                      src={`http://localhost:8080/${image}`}
+                      alt={`Property image ${index + 1}`}
+                      sx={{ width: "100%", height: 200, objectFit: "cover" }}
+                    />
+                    <Typography
+                      sx={{
+                        position: "absolute",
+                        bottom: 8,
+                        left: 8,
+                        color: "white",
+                        bgcolor: "rgba(0,0,0,0.5)",
+                        padding: "4px 8px",
+                        borderRadius: 1,
+                      }}
+                    >
+                      Photo {index + 1}
+                    </Typography>
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </DialogContent>
+      </Dialog>
     </Box>
   );
+};
+
+Images.propTypes = {
+  images: PropTypes.arrayOf(PropTypes.string).isRequired,
 };
 
 export default Images;

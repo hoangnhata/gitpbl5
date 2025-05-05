@@ -155,7 +155,7 @@ const Inputt = () => {
                 <Stack spacing={{ xs: 1, md: 0 }} alignItems="center">
                   <Typography variant="subtitle2">Guests</Typography>
                   {/* Guest Selector */}
-                  <GuestSelector/>
+                  <GuestSelector />
                 </Stack>
               </Grid>
             </Grid>

@@ -1,14 +1,11 @@
-/* eslint-disable no-unused-vars */
 import { Box, Tab, Tabs } from "@mui/material";
 import PropTypes from "prop-types";
 import { useState, useEffect } from "react";
-import Properties from "./Properties";
+import Properties from "./Properties";  // Import Properties component
 
-// Định nghĩa kiểu dữ liệu cho props của CardView
 CardView.propTypes = {
   value: PropTypes.number,
   handleChangeTab: PropTypes.func,
-  view: PropTypes.string,
 };
 
 function CustomTabPanel(props) {
@@ -27,39 +24,38 @@ CustomTabPanel.propTypes = {
 };
 
 export default function CardView(props) {
-  // State để lưu trữ dữ liệu từ API
-  const [tabData, setTabData] = useState([]); // Dữ liệu các tab từ API
+  const [tabData, setTabData] = useState([]);
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Hàm gọi API để lấy dữ liệu tab từ server
+  // Hàm gọi API để lấy dữ liệu các tab
   const fetchTabsData = async () => {
     try {
-      const response = await fetch("http://localhost:8080/hello");  // Đảm bảo API trả về JSON
+      const response = await fetch("http://localhost:8080/api/categories");
       const data = await response.json();
-      setTabData(data); // Cập nhật dữ liệu tab
+      setTabData(data.result); // Lưu dữ liệu vào state
     } catch (error) {
       console.error("Error fetching tabs data: ", error);
     }
   };
 
-  // Hàm gọi API và cập nhật dữ liệu theo tab
+  // Hàm gọi API để lấy dữ liệu properties theo id tab
   const fetchProperties = async (id) => {
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:8080/hello/${id}`);
+      const response = await fetch(`http://localhost:8080/api/listings`);
       const data = await response.json();
-      setProperties(data);
+      setProperties(data.result); // Lưu properties vào state
     } catch (error) {
-      console.error("Error fetching data: ", error);
+      console.error("Error fetching properties data: ", error);
     } finally {
       setLoading(false);
     }
   };
 
-  // Gọi fetchTabsData khi component được mount
+  // Gọi fetchTabsData khi component mount
   useEffect(() => {
-    fetchTabsData(); // Lấy dữ liệu tab khi component load
+    fetchTabsData();
   }, []);
 
   // Gọi fetchProperties khi tab thay đổi
@@ -86,7 +82,7 @@ export default function CardView(props) {
               label={tab.name}
               icon={
                 <img
-                  src={`http://localhost:8080${tab.thumnailUrl}`}
+                  src={`http://localhost:8080${tab.thumnailUrl}`}  // Kết hợp đúng tiền tố URL
                   alt={tab.name}
                   style={{
                     width: "30px",
@@ -110,6 +106,7 @@ export default function CardView(props) {
           ))}
         </Tabs>
       </Box>
+
       {tabData.map((tab, index) => (
         <CustomTabPanel value={props.value} index={index} key={tab.id}>
           {loading ? (

@@ -30,6 +30,14 @@ export default function Router() {
         { element: <PropertyPage />, path: "property/:id" },
       ],
     },
+    {
+      path: "login",
+      element: <LoginPage />,
+    },
+    {
+      path: "signup",
+      element: <SignupPage />,
+    },
     { path: "*", element: <Navigate to="/404" replace /> },
   ]);
 }
@@ -38,3 +46,5 @@ export default function Router() {
 
 const HomePage = Loadable(lazy(() => import("../pages/Home")));
 const PropertyPage = Loadable(lazy(() => import("../pages/Property")));
+const LoginPage = Loadable(lazy(() => import("../pages/Login")));
+const SignupPage = Loadable(lazy(() => import("../pages/Signup")));
