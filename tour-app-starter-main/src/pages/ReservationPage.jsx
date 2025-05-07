@@ -66,7 +66,7 @@ const ReservationPage = () => {
 
   const totalSteps = 3;
   const progress = (currentStep / totalSteps) * 100;
-
+  const asa = 9;
   if (!roomData) {
     return (
       <Container>
