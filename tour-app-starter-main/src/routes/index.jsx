@@ -28,6 +28,7 @@ export default function Router() {
       children: [
         { element: <HomePage />, index: true },
         { element: <PropertyPage />, path: "property/:id" },
+        { element: <ReservationPage />, path: "reservation" },
       ],
     },
     {
@@ -48,3 +49,6 @@ const HomePage = Loadable(lazy(() => import("../pages/Home")));
 const PropertyPage = Loadable(lazy(() => import("../pages/Property")));
 const LoginPage = Loadable(lazy(() => import("../pages/Login")));
 const SignupPage = Loadable(lazy(() => import("../pages/Signup")));
+const ReservationPage = Loadable(
+  lazy(() => import("../pages/ReservationPage"))
+);

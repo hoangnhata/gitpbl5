@@ -32,9 +32,15 @@ const Details = ({ property }) => {
             {/* Right Column - Booking Card */}
             <Grid item md={4} xs={12}>
               <BookingCard
+                id={property.id} 
                 price={property.price}
                 startDate={property.startDate}
                 endDate={property.endDate}
+                images={property.images}
+                title={property.title}
+                avgStart={property.avgStart}
+                reviews={property.reviews}
+                popular={property.popular}
               />
             </Grid>
           </Grid>
@@ -46,6 +52,7 @@ const Details = ({ property }) => {
 
 Details.propTypes = {
   property: PropTypes.shape({
+    id: PropTypes.number.isRequired, 
     title: PropTypes.string.isRequired,
     address: PropTypes.string.isRequired,
     country: PropTypes.string.isRequired,
@@ -54,6 +61,10 @@ Details.propTypes = {
     amenites: PropTypes.array.isRequired,
     startDate: PropTypes.string.isRequired,
     endDate: PropTypes.string.isRequired,
+    images: PropTypes.array.isRequired,
+    avgStart: PropTypes.number.isRequired,
+    reviews: PropTypes.number.isRequired,
+    popular: PropTypes.bool,
   }).isRequired,
 };
 

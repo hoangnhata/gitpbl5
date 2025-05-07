@@ -17,7 +17,7 @@ import {
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import Logo from "../components/Logo";
-import axios from "axios";
+import axiosInstance from "../api/axiosConfig";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -43,64 +43,45 @@ const Login = () => {
     e.preventDefault();
     setError("");
     setLoading(true);
-
+  
     try {
-      console.log("Attempting login with:", { username: formData.username }); // Debug log
-
-      const response = await axios.post(
-        "/auth/login",
-        {
-          username: formData.username,
-          password: formData.password,
-        },
-        {
+      const loginResponse = await axiosInstance.post("/auth/login", {
+        username: formData.username,
+        password: formData.password,
+      });
+  
+      if (loginResponse.data.code === 200) {
+        const { access_token, refresh_token } = loginResponse.data.result;
+  
+        localStorage.setItem("accessToken", access_token);
+        localStorage.setItem("refreshToken", refresh_token);
+  
+        const userResponse = await axiosInstance.get("/api/users/myInformation", {
           headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
+            Authorization: `Bearer ${access_token}`,
           },
+        });
+  
+        if (userResponse.data.code === 200) {
+          const userData = userResponse.data.result;
+          localStorage.setItem("user", JSON.stringify(userData));
+          localStorage.setItem("userName", userData.username);
+  
+          // 🔥 Gửi sự kiện để Header cập nhật
+          window.dispatchEvent(new Event("storage"));
         }
-      );
-
-      console.log("Login response:", response.data);
-
-      if (response.data.code === 200) {
-        const { accessToken, refreshToken, name } = response.data.result;
-
-        // Store tokens
-        localStorage.setItem("accessToken", accessToken);
-        localStorage.setItem("refreshToken", refreshToken);
-        localStorage.setItem("userName", name);
-
-        // Set default authorization header
-        axios.defaults.headers.common[
-          "Authorization"
-        ] = `Bearer ${accessToken}`;
-
-        // Store user data
-        localStorage.setItem("user", JSON.stringify(response.data.result));
-
+  
         setSuccess(true);
-        setTimeout(() => {
-          navigate("/");
-        }, 1500);
-      } else {
-        setError(response.data.message || "Invalid username or password");
+        setTimeout(() => navigate("/"), 1500);
       }
     } catch (err) {
-      console.error("Login error:", {
-        status: err.response?.status,
-        message: err.response?.data?.message,
-        error: err.message,
-      });
-
-      if (!err.response) {
-        setError(
-          "Unable to connect to the server. Please check your internet connection."
-        );
-      } else if (err.response?.status === 401 || err.response?.status === 403) {
+      console.error("Login error:", err);
+      if (err.response?.status === 401) {
         setError("Invalid username or password");
+      } else if (err.response?.status === 404) {
+        setError("API endpoint not found");
       } else {
-        setError(err.response?.data?.message || "An unexpected error occurred");
+        setError("Login failed. Please try again.");
       }
     } finally {
       setLoading(false);

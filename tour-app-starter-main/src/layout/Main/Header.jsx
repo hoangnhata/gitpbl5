@@ -10,7 +10,6 @@ import {
 } from "@mui/material";
 import Logo from "../../components/Logo";
 import Inputt from "./Inputt";
-import { faker } from "@faker-js/faker";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -18,17 +17,45 @@ import {
   PersonAddRounded,
   LogoutRounded,
 } from "@mui/icons-material";
+// Make sure this path is correct relative to Header.jsx
+import axiosInstance from "../../api/axiosConfig";
 
 const Header = () => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [userName, setUserName] = useState("");
+  const [userInfo, setUserInfo] = useState(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const storedUserName = localStorage.getItem("userName");
-    if (storedUserName) {
-      setUserName(storedUserName);
+  const fetchUserInfo = async () => {
+    try {
+      const access_token = localStorage.getItem("accessToken");
+      if (access_token) {
+        const userResponse = await axiosInstance.get("/api/users/myInformation");
+
+        if (userResponse.data.code === 0 || userResponse.data.code === 200) {
+          const userData = userResponse.data.result;
+          setUserInfo(userData);
+          setUserName(userData.username);
+          localStorage.setItem("user", JSON.stringify(userData));
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching user info:", error);
+      if (error.response?.status === 401) {
+        handleLogout();
+      }
     }
+  };
+
+  useEffect(() => {
+    fetchUserInfo();
+
+    const handleStorageChange = () => {
+      fetchUserInfo();
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
   const handleClick = (event) => {
@@ -55,6 +82,7 @@ const Header = () => {
     localStorage.removeItem("userName");
     localStorage.removeItem("user");
     setUserName("");
+    setUserInfo(null);
     handleClose();
     navigate("/login");
   };
@@ -72,29 +100,18 @@ const Header = () => {
         >
           <Logo />
           <Inputt />
-          <IconButton
-            onClick={handleClick}
-            sx={{
-              "&:hover": {
-                transform: "scale(1.05)",
-                transition: "transform 0.2s",
-              },
-            }}
-          >
-            <Avatar alt={userName || "User"} src={faker.image.avatar()} />
+          <IconButton onClick={handleClick}>
+            <Avatar
+              alt={userName || "User"}
+              src={userInfo?.thumbnailUrl || "/default-avatar.png"}
+            />
           </IconButton>
           <Menu
             anchorEl={anchorEl}
             open={Boolean(anchorEl)}
             onClose={handleClose}
-            anchorOrigin={{
-              vertical: "bottom",
-              horizontal: "right",
-            }}
-            transformOrigin={{
-              vertical: "top",
-              horizontal: "right",
-            }}
+            anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+            transformOrigin={{ vertical: "top", horizontal: "right" }}
             PaperProps={{
               elevation: 4,
               sx: {
@@ -120,80 +137,49 @@ const Header = () => {
             {isLoggedIn ? (
               <>
                 <Box sx={{ p: 2, pb: 1.5 }}>
-                  <Typography
-                    variant="subtitle1"
-                    color="text.primary"
-                    fontWeight={600}
-                  >
-                    {userName}
+                  <Avatar
+                    src={userInfo?.thumbnailUrl || "/default-avatar.png"}
+                    sx={{
+                      width: 80,
+                      height: 80,
+                      margin: "0 auto 1rem",
+                      border: "2px solid #eee",
+                    }}
+                  />
+                  <Typography variant="subtitle1" fontWeight={600}>
+                    {userInfo?.fullname || userName}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Welcome back!
+                    {userInfo?.email}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {userInfo?.phone}
                   </Typography>
                 </Box>
-                <Divider sx={{ my: 0.5 }} />
-                <MenuItem
-                  onClick={handleLogout}
-                  sx={{
-                    py: 1.5,
-                    px: 2.5,
-                    "&:hover": {
-                      bgcolor: "action.hover",
-                    },
-                  }}
-                >
-                  <LogoutRounded
-                    sx={{ mr: 2, fontSize: 20, color: "error.main" }}
-                  />
-                  <Typography variant="body2" color="error.main">
-                    Logout
-                  </Typography>
+                <Divider />
+                <MenuItem onClick={handleLogout}>
+                  <LogoutRounded sx={{ mr: 2, color: "error.main" }} />
+                  <Typography color="error.main">Logout</Typography>
                 </MenuItem>
               </>
             ) : (
               <>
                 <Box sx={{ p: 2, pb: 1.5 }}>
-                  <Typography
-                    variant="subtitle1"
-                    color="text.primary"
-                    fontWeight={600}
-                  >
+                  <Typography variant="subtitle1" fontWeight={600}>
                     Welcome
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     Sign in to access your account
                   </Typography>
                 </Box>
-                <Divider sx={{ my: 0.5 }} />
-                <MenuItem
-                  onClick={handleLogin}
-                  sx={{
-                    py: 1.5,
-                    px: 2.5,
-                    "&:hover": {
-                      bgcolor: "action.hover",
-                    },
-                  }}
-                >
-                  <LoginRounded
-                    sx={{ mr: 2, fontSize: 20, color: "primary.main" }}
-                  />
-                  <Typography variant="body2">Log in</Typography>
+                <Divider />
+                <MenuItem onClick={handleLogin}>
+                  <LoginRounded sx={{ mr: 2 }} />
+                  <Typography>Log in</Typography>
                 </MenuItem>
-                <MenuItem
-                  onClick={handleSignup}
-                  sx={{
-                    py: 1.5,
-                    px: 2.5,
-                    "&:hover": {
-                      bgcolor: "action.hover",
-                    },
-                  }}
-                >
-                  <PersonAddRounded
-                    sx={{ mr: 2, fontSize: 20, color: "primary.main" }}
-                  />
-                  <Typography variant="body2">Sign up</Typography>
+                <MenuItem onClick={handleSignup}>
+                  <PersonAddRounded sx={{ mr: 2 }} />
+                  <Typography>Sign up</Typography>
                 </MenuItem>
               </>
             )}

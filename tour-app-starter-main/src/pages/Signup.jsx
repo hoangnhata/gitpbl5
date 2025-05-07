@@ -23,8 +23,10 @@ const SignUp = () => {
   const [error, setError] = useState("");
   const [formData, setFormData] = useState({
     username: "",
-    name: "",
     password: "",
+    fullname: "",
+    email: "",
+    phone: "",
   });
 
   const handleChange = (e) => {
@@ -45,8 +47,10 @@ const SignUp = () => {
         "/api/users",
         {
           username: formData.username,
-          name: formData.name,
           password: formData.password,
+          fullname: formData.fullname,
+          email: formData.email,
+          phone: formData.phone,
         },
         {
           headers: {
@@ -196,12 +200,51 @@ const SignUp = () => {
 
               <TextField
                 fullWidth
-                name="name"
+                name="fullname"
                 label="Full Name"
-                value={formData.name}
+                value={formData.fullname}
                 onChange={handleChange}
                 disabled={loading}
                 error={!!error}
+                required
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    "& fieldset": {
+                      borderColor: "rgba(255, 255, 255, 0.23)",
+                    },
+                    "&:hover fieldset": {
+                      borderColor: "rgba(255, 255, 255, 0.4)",
+                    },
+                  },
+                }}
+              />
+
+              <TextField
+                fullWidth
+                name="email"
+                label="Email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    "& fieldset": {
+                      borderColor: "rgba(255, 255, 255, 0.23)",
+                    },
+                    "&:hover fieldset": {
+                      borderColor: "rgba(255, 255, 255, 0.4)",
+                    },
+                  },
+                }}
+              />
+
+              <TextField
+                fullWidth
+                name="phone"
+                label="Phone Number"
+                value={formData.phone}
+                onChange={handleChange}
                 required
                 sx={{
                   "& .MuiOutlinedInput-root": {
