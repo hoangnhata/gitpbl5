@@ -1,0 +1,250 @@
+import { useState } from "react";
+import {
+  Box,
+  Typography,
+  Tabs,
+  Tab,
+  Paper,
+  Stack,
+  IconButton,
+  Badge,
+  Container,
+  Grid,
+  Avatar,
+  Card,
+  Button,
+  TextField,
+  InputAdornment,
+  Menu,
+  MenuItem,
+  Divider,
+  Alert,
+} from "@mui/material";
+import {
+  Notifications as NotificationsIcon,
+  Search as SearchIcon,
+  FilterList as FilterIcon,
+  Sort as SortIcon,
+  AttachMoney as MoneyIcon,
+  People as PeopleIcon,
+  Home as HomeIcon,
+  Receipt as ReceiptIcon,
+  Assessment as AssessmentIcon,
+  Support as SupportIcon,
+  Settings as SettingsIcon,
+} from "@mui/icons-material";
+import PropTypes from "prop-types";
+
+// Import admin section components
+import AdminDashboard from "../section/admin/dashboard";
+import AdminUsers from "../section/admin/users";
+import AdminProperties from "../section/admin/properties";
+import AdminTransactions from "../section/admin/transactions";
+import AdminReports from "../section/admin/reports";
+import AdminSupports from "../section/admin/supports";
+import AdminSystem from "../section/admin/system";
+
+function TabPanel({ children, value, index }) {
+  return value === index ? <Box>{children}</Box> : null;
+}
+
+TabPanel.propTypes = {
+  children: PropTypes.node,
+  index: PropTypes.number.isRequired,
+  value: PropTypes.number.isRequired,
+};
+
+export default function AdminPage() {
+  const [tabValue, setTabValue] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
+  };
+
+  const handleMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleSearch = (event) => {
+    setSearchQuery(event.target.value);
+  };
+
+  // Mock stats data
+  const stats = [
+    {
+      title: "Tổng doanh thu",
+      value: "₫15,000,000",
+      icon: <MoneyIcon />,
+      color: "primary.main",
+    },
+    {
+      title: "Người dùng",
+      value: "1,234",
+      icon: <PeopleIcon />,
+      color: "success.main",
+    },
+    {
+      title: "Chỗ ở",
+      value: "567",
+      icon: <HomeIcon />,
+      color: "warning.main",
+    },
+    {
+      title: "Giao dịch",
+      value: "890",
+      icon: <ReceiptIcon />,
+      color: "info.main",
+    },
+  ];
+
+  return (
+    <Container maxWidth="lg">
+      <Box sx={{ mt: 4, mb: 4 }}>
+        {/* Header Section */}
+        <Paper elevation={0} sx={{ p: 3, mb: 3, bgcolor: "background.default" }}>
+          <Grid container alignItems="center" spacing={2}>
+            <Grid item xs={12} md={6}>
+              <Typography variant="h4" gutterBottom>
+                Trang Quản Trị
+              </Typography>
+              <Typography variant="body1" color="text.secondary">
+                Theo dõi & quản lý toàn bộ hệ thống
+              </Typography>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Stack direction="row" spacing={2} justifyContent="flex-end">
+                <IconButton>
+                  <Badge badgeContent={5} color="error">
+                    <NotificationsIcon />
+                  </Badge>
+                </IconButton>
+                <Button
+                  variant="contained"
+                  startIcon={<FilterIcon />}
+                  onClick={handleMenuOpen}
+                >
+                  Lọc
+                </Button>
+              </Stack>
+            </Grid>
+          </Grid>
+        </Paper>
+
+        {/* Search Section */}
+        <Paper elevation={0} sx={{ p: 2, mb: 3, bgcolor: "background.default" }}>
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                placeholder="Tìm kiếm..."
+                value={searchQuery}
+                onChange={handleSearch}
+                InputProps={{
+                  startAdornment: (
+                    <SearchIcon sx={{ mr: 1, color: "text.secondary" }} />
+                  ),
+                }}
+              />
+            </Grid>
+          </Grid>
+        </Paper>
+
+        {/* Stats Overview */}
+        <Grid container spacing={3} sx={{ mb: 3 }}>
+          {stats.map((stat, index) => (
+            <Grid item xs={12} md={3} key={index}>
+              <Paper sx={{ p: 2 }}>
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  <Avatar sx={{ bgcolor: stat.color }}>
+                    {stat.icon}
+                  </Avatar>
+                  <Box>
+                    <Typography variant="h6">{stat.value}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {stat.title}
+                    </Typography>
+                  </Box>
+                </Stack>
+              </Paper>
+            </Grid>
+          ))}
+        </Grid>
+
+        {/* Main Content */}
+        <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+          <Tabs
+            value={tabValue}
+            onChange={handleTabChange}
+            aria-label="admin-tabs"
+            variant="scrollable"
+            scrollButtons="auto"
+          >
+            <Tab label="Tổng quan" />
+            <Tab label="Người dùng" />
+            <Tab label="Chỗ ở" />
+            <Tab label="Giao dịch" />
+            <Tab label="Báo cáo" />
+            <Tab label="Hỗ trợ" />
+            <Tab label="Hệ thống" />
+          </Tabs>
+        </Box>
+
+        <Box sx={{ p: 3 }}>
+          <TabPanel value={tabValue} index={0}>
+            <AdminDashboard />
+          </TabPanel>
+          <TabPanel value={tabValue} index={1}>
+            <AdminUsers />
+          </TabPanel>
+          <TabPanel value={tabValue} index={2}>
+            <AdminProperties />
+          </TabPanel>
+          <TabPanel value={tabValue} index={3}>
+            <AdminTransactions />
+          </TabPanel>
+          <TabPanel value={tabValue} index={4}>
+            <AdminReports />
+          </TabPanel>
+          <TabPanel value={tabValue} index={5}>
+            <AdminSupports />
+          </TabPanel>
+          <TabPanel value={tabValue} index={6}>
+            <AdminSystem />
+          </TabPanel>
+        </Box>
+      </Box>
+
+      {/* Filter Menu */}
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+      >
+        <MenuItem onClick={handleMenuClose}>Tất cả</MenuItem>
+        <MenuItem onClick={handleMenuClose}>Hôm nay</MenuItem>
+        <MenuItem onClick={handleMenuClose}>Tuần này</MenuItem>
+        <MenuItem onClick={handleMenuClose}>Tháng này</MenuItem>
+        <Divider />
+        <MenuItem onClick={handleMenuClose}>Tùy chỉnh</MenuItem>
+      </Menu>
+
+      {/* Success Alert */}
+      {showSuccessAlert && (
+        <Alert
+          severity="success"
+          onClose={() => setShowSuccessAlert(false)}
+          sx={{ position: "fixed", bottom: 24, right: 24, zIndex: 2000 }}
+        >
+          Thao tác thành công!
+        </Alert>
+      )}
+    </Container>
+  );
+}
