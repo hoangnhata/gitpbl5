@@ -12,7 +12,7 @@ const AboutThisPlace = ({ description }) => {
   return (
     <Box sx={{ mb: 4 }}>
       <Typography variant="h6" sx={{ mb: 2, mt: 2 }}>
-        About this place
+        Về nơi này
       </Typography>
       <Typography
         variant="body1"
@@ -42,7 +42,7 @@ const AboutThisPlace = ({ description }) => {
           },
         }}
       >
-        See More
+        Xem thêm
         <ArrowForwardIosIcon sx={{ fontSize: 14 }} />
       </Link>
 

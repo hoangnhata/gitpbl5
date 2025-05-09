@@ -89,7 +89,7 @@ const AmenitiesSection = ({ amenities: amenites }) => {
           fontFamily: (theme) => theme.typography.fontSecondaryFamily,
         }}
       >
-        What this place offers
+        Những gì nơi này cung cấp
       </Typography>
 
       <AmenitiesList items={displayedAmenities} inModal={false} />
@@ -118,7 +118,7 @@ const AmenitiesSection = ({ amenities: amenites }) => {
               },
             }}
           >
-            Show all {amenites.length} amenities
+            Hiển thị tất cả {amenites.length} tiện nghi
           </Button>
         </Box>
       )}
@@ -144,7 +144,7 @@ const AmenitiesSection = ({ amenities: amenites }) => {
             fontWeight: 700,
           }}
         >
-          What this place offers
+          Những gì nơi này cung cấp
           <IconButton
             onClick={handleClose}
             sx={{

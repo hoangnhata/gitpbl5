@@ -31,21 +31,21 @@ const RatingDisplay = ({ rating, reviewCount, reviews }) => {
 
     const content = document.createElement("div");
     content.innerHTML = `
-      <h2 style="margin-bottom: 24px; color: #fff; font-size: 28px;">Guest Reviews</h2>
+      <h2 style="margin-bottom: 24px; color: #fff; font-size: 28px;">Đánh giá của khách</h2>
       
       <div style="margin-bottom: 32px;">
-        <h3 style="color: #fff; font-size: 20px; margin-bottom: 16px;">Rating Categories</h3>
+        <h3 style="color: #fff; font-size: 20px; margin-bottom: 16px;">Danh mục đánh giá</h3>
         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
           <div style="padding: 16px; background: rgba(255,255,255,0.1); border-radius: 8px;">
             <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-              <span><svg style="width: 20px; height: 20px; vertical-align: middle; margin-right: 8px;" viewBox="0 0 24 24"><path fill="currentColor" d="M19.36 2.72l1.42 1.42l-5.46 5.46l-1.42-1.42l5.46-5.46M17.54 10.88l-7.03 7.03l-3.75-3.75L3.41 17.6L10.16 24.4l7.03-7.03L17.54 10.88z"/></svg>Cleanliness</span>
+              <span><svg style="width: 20px; height: 20px; vertical-align: middle; margin-right: 8px;" viewBox="0 0 24 24"><path fill="currentColor" d="M19.36 2.72l1.42 1.42l-5.46 5.46l-1.42-1.42l5.46-5.46M17.54 10.88l-7.03 7.03l-3.75-3.75L3.41 17.6L10.16 24.4l7.03-7.03L17.54 10.88z"/></svg>Sạch sẽ</span>
               <span>5.0 ⭐</span>
             </div>
             <div style="height: 4px; background: #2196F3; border-radius: 2px; width: 100%;"></div>
           </div>
           <div style="padding: 16px; background: rgba(255,255,255,0.1); border-radius: 8px;">
             <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-              <span><svg style="width: 20px; height: 20px; vertical-align: middle; margin-right: 8px;" viewBox="0 0 24 24"><path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19L21 7l-1.41-1.41L9 16.17z"/></svg>Accuracy</span>
+              <span><svg style="width: 20px; height: 20px; vertical-align: middle; margin-right: 8px;" viewBox="0 0 24 24"><path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19L21 7l-1.41-1.41L9 16.17z"/></svg>Chính xác</span>
               <span>5.0 ⭐</span>
             </div>
             <div style="height: 4px; background: #2196F3; border-radius: 2px; width: 100%;"></div>
@@ -122,7 +122,7 @@ const RatingDisplay = ({ rating, reviewCount, reviews }) => {
     `;
 
     const closeButton = document.createElement("button");
-    closeButton.textContent = "Close";
+    closeButton.textContent = "Đóng";
     closeButton.style.cssText = `
       margin-top: 24px;
       padding: 12px 24px;
@@ -220,7 +220,7 @@ const RatingDisplay = ({ rating, reviewCount, reviews }) => {
           },
         }}
       >
-        {reviewCount > 0 ? `${reviewCount} Reviews` : "No Reviews Yet"}
+        {reviewCount > 0 ? `${reviewCount} đánh giá` : "Chưa có đánh giá"}
       </Typography>
     </Box>
   );

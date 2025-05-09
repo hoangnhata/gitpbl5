@@ -24,8 +24,8 @@ const PropertyDescription = () => {
           textAlign: "center",
         }}
       >
-        One of the most loved homes on Airbnb based on ratings, reviews, and
-        reliability
+        Một trong những căn nhà được yêu thích nhất trên Airbnb dựa trên đánh
+        giá, nhận xét và độ tin cậy
       </Typography>
     </Box>
   );

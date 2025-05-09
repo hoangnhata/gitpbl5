@@ -1,16 +1,6 @@
 import React, { useState } from "react";
-import {
-  Box,
-  Typography,
-  Button,
-  Divider,
-  Stack,
-  IconButton,
-  TextField,
-  Popover,
-} from "@mui/material";
+import { Box, Typography, Button, Divider, Stack } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { AddCircle, RemoveCircle } from "@mui/icons-material";
 import DateRangeSelector from "./DateRangeSelector";
 import PricingBreakdown from "./PricingBreakdown";
 import PropTypes from "prop-types";
@@ -27,26 +17,14 @@ const BookingCard = ({
   popular,
 }) => {
   const [value, setValue] = useState([null, null]);
-  const [guests, setGuests] = useState({
-    adults: 1,
-    children: 0,
-  });
-  const [anchorEl, setAnchorEl] = useState(null);
   const navigate = useNavigate();
 
-  const handleClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
-
-  const handleGuestsChange = (type, change) => {
-    setGuests((prev) => ({
-      ...prev,
-      [type]: Math.max(0, prev[type] + change),
-    }));
+  const calculateTotal = () => {
+    if (!value[0] || !value[1]) return price;
+    const numberOfNights = Math.ceil(
+      (value[1] - value[0]) / (1000 * 60 * 60 * 24)
+    );
+    return price * numberOfNights;
   };
 
   const handleReserveClick = () => {
@@ -55,12 +33,10 @@ const BookingCard = ({
       return;
     }
 
-    const totalGuests = guests.adults + guests.children;
     const numberOfNights = Math.ceil(
       (value[1] - value[0]) / (1000 * 60 * 60 * 24)
     );
     const totalPrice = price * numberOfNights;
-    const serviceFee = Math.round(totalPrice * 0.1);
 
     navigate("/reservation", {
       state: {
@@ -69,12 +45,8 @@ const BookingCard = ({
           price,
           checkIn: value[0].toISOString().split("T")[0],
           checkOut: value[1].toISOString().split("T")[0],
-          guests: totalGuests,
-          guestDetails: guests,
           numberOfNights,
           totalPrice,
-          serviceFee,
-          finalTotal: totalPrice + serviceFee,
           images: images,
           title: title,
           avgStart: avgStart,
@@ -84,9 +56,6 @@ const BookingCard = ({
       },
     });
   };
-
-  const totalGuests = guests.adults + guests.children;
-  const displayGuests = `${totalGuests} người`;
 
   return (
     <Box sx={{ p: 3, bgcolor: "#2d2d2d", color: "white", borderRadius: 2 }}>
@@ -102,72 +71,6 @@ const BookingCard = ({
         startDate={startDate}
         endDate={endDate}
       />
-
-      <Divider sx={{ my: 2 }} />
-
-      {/* Guest Selector */}
-      <Stack spacing={1} alignItems="center">
-        <Typography variant="subtitle2" sx={{ color: "text.secondary" }}>
-          Số lượng khách
-        </Typography>
-        <Box
-          onClick={handleClick}
-          sx={{
-            display: "inline-block",
-            padding: "10px 15px",
-            bgcolor: "#333",
-            borderRadius: "25px",
-            cursor: "pointer",
-          }}
-        >
-          <Typography variant="body2">{displayGuests}</Typography>
-        </Box>
-      </Stack>
-
-      <Popover
-        open={Boolean(anchorEl)}
-        anchorEl={anchorEl}
-        onClose={handleClose}
-        anchorOrigin={{
-          vertical: "bottom",
-          horizontal: "center",
-        }}
-      >
-        <Stack spacing={2} sx={{ p: 2 }}>
-          {[
-            { type: "adults", label: "Người lớn" },
-            { type: "children", label: "Trẻ em" },
-          ].map(({ type, label }) => (
-            <React.Fragment key={type}>
-              <Stack
-                direction="row"
-                alignItems="center"
-                justifyContent="space-between"
-                spacing={3}
-              >
-                <Typography sx={{ fontWeight: 600 }}>{label}</Typography>
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  <IconButton
-                    onClick={() => handleGuestsChange(type, -1)}
-                    disabled={guests[type] === 0}
-                  >
-                    <RemoveCircle />
-                  </IconButton>
-                  <TextField
-                    disabled
-                    value={guests[type]}
-                    sx={{ width: 40, textAlign: "center" }}
-                  />
-                  <IconButton onClick={() => handleGuestsChange(type, 1)}>
-                    <AddCircle />
-                  </IconButton>
-                </Stack>
-              </Stack>
-              <Divider />
-            </React.Fragment>
-          ))}
-        </Stack>
-      </Popover>
 
       <Divider sx={{ my: 2 }} />
 
@@ -195,13 +98,14 @@ const BookingCard = ({
             ? Math.ceil((value[1] - value[0]) / (1000 * 60 * 60 * 24))
             : 0
         }
+        total={calculateTotal()}
       />
     </Box>
   );
 };
 
 BookingCard.propTypes = {
-  id: PropTypes.number.isRequired, 
+  id: PropTypes.number.isRequired,
   price: PropTypes.number.isRequired,
   startDate: PropTypes.string.isRequired,
   endDate: PropTypes.string.isRequired,

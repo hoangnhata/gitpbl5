@@ -26,28 +26,19 @@ const Filter = () => {
             alignItems="center"
             justifyContent={"space-between"}
           >
-            <Typography variant="subtitle1">Filter</Typography>
-            <Button size="small">Clear all filters</Button>
+            <Typography variant="subtitle1">Bộ lọc</Typography>
+            <Button size="small">Xóa tất cả bộ lọc</Button>
           </Stack>
         </Box>
         <Stack spacing={2} sx={{ px: 3 }}>
-          {/* type of place */}
-          <TypeOfPlace />
-          <Divider />
           {/* price range */}
           <PriceRange />
-          <Divider />
-          {/* No , of room , bed & baths */}
-          <RoomAndBeds />
           <Divider />
           {/* Property */}
           <PropertyType />
           <Divider />
           {/* Amenities */}
           <Amenities />
-          <Divider />
-          {/* BookingOptions */}
-          <BookingOptions />
         </Stack>
       </Card>
     </Box>

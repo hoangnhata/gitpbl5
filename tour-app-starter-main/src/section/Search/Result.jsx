@@ -47,7 +47,8 @@ const Result = ({ properties }) => {
               textAlign={{ xs: "center", md: "start" }}
               sx={{ fontWeight: 600 }}
             >
-              Found {properties?.length || 0} results based on your search
+              Tìm thấy {properties?.length || 0} kết quả dựa trên tìm kiếm của
+              bạn
             </Typography>
           </Grid>
           <Grid
@@ -65,7 +66,7 @@ const Result = ({ properties }) => {
                 sx={{ p: 1 }}
                 color="primary"
                 variant={view === "map" ? "filled" : "outlined"}
-                label={<Typography variant="subtitle2">Map view</Typography>}
+                label={<Typography variant="subtitle2">Xem bản đồ</Typography>}
                 icon={<FaMap size={20} weight="bold" />}
               />
               <Chip
@@ -75,7 +76,7 @@ const Result = ({ properties }) => {
                 sx={{ p: 1 }}
                 color="primary"
                 variant={view === "card" ? "filled" : "outlined"}
-                label={<Typography variant="subtitle2">Card view</Typography>}
+                label={<Typography variant="subtitle2">Xem thẻ</Typography>}
                 icon={<FaColumns size={20} />}
               />
             </Stack>

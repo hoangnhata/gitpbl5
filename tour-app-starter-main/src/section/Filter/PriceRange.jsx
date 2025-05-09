@@ -16,13 +16,13 @@ const PriceRange = () => {
           fontWeight: 600,
         }}
       >
-        Price Range
+        Khoảng giá
       </InputLabel>
       <Slider
         value={value}
         onChange={handleChange}
         valueLabelDisplay="auto"
-        valueLabelFormat={(value) => `$${value}`}
+        valueLabelFormat={(value) => `${value}$`}
         min={0}
         max={100}
         step={1}
@@ -30,7 +30,7 @@ const PriceRange = () => {
       <Stack direction="row" alignItems="center" spacing={2}>
         <TextField
           size="small"
-          label="Minimum"
+          label="Tối thiểu"
           type="number"
           value={value[0]}
           onChange={(e) => {
@@ -41,7 +41,7 @@ const PriceRange = () => {
         />
         <TextField
           size="small"
-          label="Maximum"
+          label="Tối đa"
           type="number"
           value={value[1]}
           onChange={(e) => {

@@ -29,6 +29,9 @@ export default function Router() {
         { element: <HomePage />, index: true },
         { element: <PropertyPage />, path: "property/:id" },
         { element: <ReservationPage />, path: "reservation" },
+        { element: <UserProfilePage />, path: "profile" },
+        { element: <HostPage />, path: "host" },
+        { element: <AdminPage />, path: "admin" },
       ],
     },
     {
@@ -52,3 +55,6 @@ const SignupPage = Loadable(lazy(() => import("../pages/Signup")));
 const ReservationPage = Loadable(
   lazy(() => import("../pages/ReservationPage"))
 );
+const UserProfilePage = Loadable(lazy(() => import("../pages/UserProfile")));
+const HostPage = Loadable(lazy(() => import("../pages/Host")));
+const AdminPage = Loadable(lazy(() => import("../pages/Admin")));

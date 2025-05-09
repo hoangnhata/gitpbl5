@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import {
   Box,
@@ -14,6 +14,7 @@ import {
   Divider,
   Paper,
   Tooltip,
+  Card,
 } from "@mui/material";
 import { useLocation, useNavigate } from "react-router-dom";
 import PersonIcon from "@mui/icons-material/Person";
@@ -63,10 +64,11 @@ const ReservationPage = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [message, setMessage] = useState("");
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
+  const [favoriteRooms, setFavoriteRooms] = useState([]);
+  const [favoriteIds, setFavoriteIds] = useState([]);
 
   const totalSteps = 3;
   const progress = (currentStep / totalSteps) * 100;
-  const asa = 9;
   if (!roomData) {
     return (
       <Container>
@@ -127,6 +129,7 @@ const ReservationPage = () => {
         listingId: roomData.id,
         startDate: formatDateToISO(startDate),
         endDate: formatDateToISO(endDate),
+        content: message,
       };
 
       const paymethodMap = {
@@ -140,12 +143,13 @@ const ReservationPage = () => {
 
       console.log("Sending payment data:", { ...paymentData, paymethod });
 
-      // Gửi yêu cầu thanh toán
+      // Gửi yêu cầu thanh toán với body là JSON
       const response = await axiosInstance.post(
         "/api/payment/create-payment",
         paymentData,
         {
           params: { paymethod },
+          headers: { "Content-Type": "application/json" },
         }
       );
 
@@ -432,6 +436,83 @@ const ReservationPage = () => {
           </Tooltip>
         </Box>
       </Box>
+    );
+  };
+
+  const fetchFavoriteRooms = async () => {
+    try {
+      const res = await axiosInstance.get("/api/users/favorites");
+      if (res.data?.result?.favorites) {
+        setFavoriteRooms(res.data.result.favorites);
+        setFavoriteIds(res.data.result.favorites.map((fav) => fav.id || fav));
+      }
+    } catch (err) {}
+  };
+
+  useEffect(() => {
+    fetchFavoriteRooms();
+  }, []);
+
+  const addFavorite = async (listingId) => {
+    try {
+      const res = await axiosInstance.post("/api/users/favorites", {
+        listingId,
+      });
+      if (res.data.code === 200) {
+        fetchFavoriteRooms();
+      }
+    } catch (err) {}
+  };
+
+  const deleteFavorite = async (listingId) => {
+    try {
+      const res = await axiosInstance.delete("/api/users/favorites", {
+        data: { listingId },
+      });
+      if (res.data.code === 200) {
+        fetchFavoriteRooms();
+      }
+    } catch (err) {}
+  };
+
+  const renderFavoriteRooms = () => {
+    console.log("favoriteRooms", favoriteRooms);
+    if (favoriteRooms.length === 0) return null;
+
+    return (
+      <Card sx={{ p: 3 }}>
+        <Typography variant="h6" sx={{ mb: 3 }}>
+          Your Favorite Rooms
+        </Typography>
+        <Grid container spacing={3}>
+          {favoriteRooms.map((room) => (
+            <Grid item xs={12} md={6} key={room.id}>
+              <Paper sx={{ p: 2, display: "flex", alignItems: "center" }}>
+                <img
+                  src={`http://localhost:8080/${room.primaryThumbnail}`}
+                  alt={room.title}
+                  style={{
+                    width: 80,
+                    height: 80,
+                    objectFit: "cover",
+                    borderRadius: 8,
+                    marginRight: 16,
+                  }}
+                />
+                <div>
+                  <Typography variant="subtitle1">{room.title}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Giá: {room.price} VND / đêm
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Từ {room.startDate} đến {room.endDate}
+                  </Typography>
+                </div>
+              </Paper>
+            </Grid>
+          ))}
+        </Grid>
+      </Card>
     );
   };
 

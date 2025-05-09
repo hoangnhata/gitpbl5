@@ -19,7 +19,6 @@ import {
 } from "@mui/x-date-pickers-pro";
 import { useState } from "react";
 import dayjs from "dayjs";
-import GuestSelector from "./GuestSelector";
 
 const StyledIconButton = styled(IconButton)(({ theme }) => ({
   background: theme.palette.primary.main,
@@ -33,35 +32,35 @@ const StyledIconButton = styled(IconButton)(({ theme }) => ({
 
 const shortcutItems = [
   {
-    label: "This week",
+    label: "Tuần này",
     getValue: () => {
       const today = dayjs();
       return [today.startOf("week"), today.endOf("week")];
     },
   },
   {
-    label: "Last 7 Days",
+    label: "7 ngày qua",
     getValue: () => {
       const today = dayjs();
       return [today.subtract(7, "day"), today];
     },
   },
   {
-    label: "Current Month",
+    label: "Tháng hiện tại",
     getValue: () => {
       const today = dayjs();
-      return [today.startOf("month"), today.endOf("month")]; // Fixed here
+      return [today.startOf("month"), today.endOf("month")];
     },
   },
   {
-    label: "Next Month",
+    label: "Tháng sau",
     getValue: () => {
       const today = dayjs();
       const startOfNextMonth = today.endOf("month").add(1, "day");
       return [startOfNextMonth, startOfNextMonth.endOf("month")];
     },
   },
-  { label: "Reset", getValue: () => [null, null] },
+  { label: "Đặt lại", getValue: () => [null, null] },
 ];
 
 const Inputt = () => {
@@ -80,16 +79,16 @@ const Inputt = () => {
         >
           <Box sx={{ width: isMobile ? "80vw" : 720 }}>
             <Grid container spacing={2}>
-              <Grid item md={4} xs={12}>
+              <Grid item md={6} xs={12}>
                 <Stack spacing={{ xs: 1, md: 0 }} alignItems="center">
                   <Typography variant="subtitle2" sx={{ fontWeight: "bold" }}>
-                    Destiny
+                    Điểm đến
                   </Typography>
                   {/* Location search */}
                   <LocationSearch />
                 </Stack>
               </Grid>
-              <Grid item md={5} xs={12}>
+              <Grid item md={6} xs={12}>
                 <Stack
                   direction="row"
                   alignItems="center"
@@ -102,7 +101,9 @@ const Inputt = () => {
                     sx={{ width: "100%" }}
                     alignItems="center"
                   >
-                    <Typography variant="subtitle2">Check in-out</Typography>
+                    <Typography variant="subtitle2">
+                      Ngày nhận-trả phòng
+                    </Typography>
                     {isMobile ? (
                       <MobileDateRangePicker
                         value={value}
@@ -149,13 +150,6 @@ const Inputt = () => {
                     )}
                   </Stack>
                   <Divider orientation="vertical" sx={{ height: 40 }} />
-                </Stack>
-              </Grid>
-              <Grid item md={3} xs={12}>
-                <Stack spacing={{ xs: 1, md: 0 }} alignItems="center">
-                  <Typography variant="subtitle2">Guests</Typography>
-                  {/* Guest Selector */}
-                  <GuestSelector />
                 </Stack>
               </Grid>
             </Grid>

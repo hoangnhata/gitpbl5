@@ -18,7 +18,7 @@ const PropertyType = () => {
           fontWeight: 600,
         }}
       >
-        Property Type
+        Loại tài sản
       </InputLabel>
       <Box>
         <Grid container spacing={3}>
@@ -32,13 +32,13 @@ const PropertyType = () => {
               <Stack direction="row" alignItems="center" spacing={1}>
                 <House sx={{ fontSize: 20 }} />
                 <Typography variant="caption" sx={{ fontSize: 13 }}>
-                  House
+                  Nhà riêng
                 </Typography>
               </Stack>
               <FormControlLabel
                 control={<Checkbox size="small" />}
                 label=""
-                sx={{ ml: "auto" }} // Move the checkbox to the right
+                sx={{ ml: "auto" }}
               />
             </Stack>
           </Grid>
@@ -52,13 +52,13 @@ const PropertyType = () => {
               <Stack direction="row" alignItems="center" spacing={1}>
                 <Hotel sx={{ fontSize: 20 }} />
                 <Typography variant="caption" sx={{ fontSize: 13 }}>
-                  Hotel
+                  Khách sạn
                 </Typography>
               </Stack>
               <FormControlLabel
                 control={<Checkbox size="small" />}
                 label=""
-                sx={{ ml: "auto" }} // Move the checkbox to the right
+                sx={{ ml: "auto" }}
               />
             </Stack>
           </Grid>
@@ -72,13 +72,13 @@ const PropertyType = () => {
               <Stack direction="row" alignItems="center" spacing={1}>
                 <BeachAccess sx={{ fontSize: 20 }} />
                 <Typography variant="caption" sx={{ fontSize: 13 }}>
-                  Guesthouse
+                  Nhà nghỉ
                 </Typography>
               </Stack>
               <FormControlLabel
                 control={<Checkbox size="small" />}
                 label=""
-                sx={{ ml: "auto" }} // Move the checkbox to the right
+                sx={{ ml: "auto" }}
               />
             </Stack>
           </Grid>
@@ -92,13 +92,13 @@ const PropertyType = () => {
               <Stack direction="row" alignItems="center" spacing={1}>
                 <Apartment sx={{ fontSize: 20 }} />
                 <Typography variant="caption" sx={{ fontSize: 13 }}>
-                  Apartment
+                  Căn hộ
                 </Typography>
               </Stack>
               <FormControlLabel
                 control={<Checkbox size="small" />}
                 label=""
-                sx={{ ml: "auto" }} // Move the checkbox to the right
+                sx={{ ml: "auto" }}
               />
             </Stack>
           </Grid>

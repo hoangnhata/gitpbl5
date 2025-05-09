@@ -9,17 +9,17 @@ const BookingOptions = () => {
           fontWeight: 600,
         }}
       >
-        Booking Options
+        Tùy chọn đặt phòng
       </InputLabel>
       <Stack direction="row" alignItems="center" justifyContent="space-between">
         <Typography variant="caption" sx={{ fontSize: 13 }}>
-          Instant book
+          Đặt ngay
         </Typography>
         <Switch defaultChecked />
       </Stack>
       <Stack direction="row" alignItems="center" justifyContent="space-between">
         <Typography variant="caption" sx={{ fontSize: 13 }}>
-          Self Check-in 
+          Tự nhận phòng
         </Typography>
         <Switch defaultChecked />
       </Stack>

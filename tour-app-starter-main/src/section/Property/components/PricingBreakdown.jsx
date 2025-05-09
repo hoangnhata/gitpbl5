@@ -1,22 +1,24 @@
-import React from "react";
 import { Box, Typography } from "@mui/material";
 import PropTypes from "prop-types";
 
-const PricingBreakdown = ({ price }) => {
+const PricingBreakdown = ({ price, nights, total }) => {
   return (
     <Box sx={{ marginTop: 2 }}>
-      <Typography
-        variant="body2"
-        sx={{ display: "flex", justifyContent: "space-between" }}
-      >
-        ₹{price} x 3 nights <span>₹{price * 3}</span>
-      </Typography>
-      <Typography
-        variant="body2"
-        sx={{ display: "flex", justifyContent: "space-between" }}
-      >
-        Service Fee <span>₹572</span>
-      </Typography>
+      {nights > 0 ? (
+        <Typography
+          variant="body2"
+          sx={{ display: "flex", justifyContent: "space-between" }}
+        >
+          ₹{price} x {nights} đêm <span>₹{total}</span>
+        </Typography>
+      ) : (
+        <Typography
+          variant="body2"
+          sx={{ display: "flex", justifyContent: "space-between" }}
+        >
+          Giá phòng / đêm <span>₹{price}</span>
+        </Typography>
+      )}
       <Typography
         variant="h6"
         sx={{
@@ -25,7 +27,7 @@ const PricingBreakdown = ({ price }) => {
           marginTop: 1,
         }}
       >
-        Total <span>₹{price * 3 + 572}</span>
+        Tổng cộng <span>₹{total}</span>
       </Typography>
     </Box>
   );
@@ -33,6 +35,8 @@ const PricingBreakdown = ({ price }) => {
 
 PricingBreakdown.propTypes = {
   price: PropTypes.number.isRequired,
+  nights: PropTypes.number.isRequired,
+  total: PropTypes.number.isRequired,
 };
 
 export default PricingBreakdown;
