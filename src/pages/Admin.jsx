@@ -35,7 +35,7 @@ import {
 } from "@mui/icons-material";
 import PropTypes from "prop-types";
 
-// Import admin section components
+
 import AdminDashboard from "../section/admin/dashboard";
 import AdminUsers from "../section/admin/users";
 import AdminProperties from "../section/admin/properties";
@@ -43,6 +43,9 @@ import AdminTransactions from "../section/admin/transactions";
 import AdminReports from "../section/admin/reports";
 import AdminSupports from "../section/admin/supports";
 import AdminSystem from "../section/admin/system";
+import AdminAmenities from "../section/admin/amenities";
+import AdminCategories from "../section/admin/categories";
+import AdminBookings from "../section/admin/bookings";
 
 function TabPanel({ children, value, index }) {
   return value === index ? <Box>{children}</Box> : null;
@@ -76,29 +79,29 @@ export default function AdminPage() {
     setSearchQuery(event.target.value);
   };
 
-  // Mock stats data
+
   const stats = [
     {
       title: "Tổng doanh thu",
-      value: "₫15,000,000",
+      value: "₫15",
       icon: <MoneyIcon />,
       color: "primary.main",
     },
     {
       title: "Người dùng",
-      value: "1,234",
+      value: "3",
       icon: <PeopleIcon />,
       color: "success.main",
     },
     {
       title: "Chỗ ở",
-      value: "567",
+      value: "2",
       icon: <HomeIcon />,
       color: "warning.main",
     },
     {
       title: "Giao dịch",
-      value: "890",
+      value: "3",
       icon: <ReceiptIcon />,
       color: "info.main",
     },
@@ -107,7 +110,6 @@ export default function AdminPage() {
   return (
     <Container maxWidth="lg">
       <Box sx={{ mt: 4, mb: 4 }}>
-        {/* Header Section */}
         <Paper elevation={0} sx={{ p: 3, mb: 3, bgcolor: "background.default" }}>
           <Grid container alignItems="center" spacing={2}>
             <Grid item xs={12} md={6}>
@@ -137,7 +139,6 @@ export default function AdminPage() {
           </Grid>
         </Paper>
 
-        {/* Search Section */}
         <Paper elevation={0} sx={{ p: 2, mb: 3, bgcolor: "background.default" }}>
           <Grid container spacing={2} alignItems="center">
             <Grid item xs={12}>
@@ -156,7 +157,6 @@ export default function AdminPage() {
           </Grid>
         </Paper>
 
-        {/* Stats Overview */}
         <Grid container spacing={3} sx={{ mb: 3 }}>
           {stats.map((stat, index) => (
             <Grid item xs={12} md={3} key={index}>
@@ -177,7 +177,6 @@ export default function AdminPage() {
           ))}
         </Grid>
 
-        {/* Main Content */}
         <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
           <Tabs
             value={tabValue}
@@ -193,6 +192,9 @@ export default function AdminPage() {
             <Tab label="Báo cáo" />
             <Tab label="Hỗ trợ" />
             <Tab label="Hệ thống" />
+            <Tab label="Tiện ích" />
+            <Tab label="Danh mục" />
+            <Tab label="Đặt phòng" />
           </Tabs>
         </Box>
 
@@ -218,10 +220,18 @@ export default function AdminPage() {
           <TabPanel value={tabValue} index={6}>
             <AdminSystem />
           </TabPanel>
+          <TabPanel value={tabValue} index={7}>
+            <AdminAmenities />
+          </TabPanel>
+          <TabPanel value={tabValue} index={8}>
+            <AdminCategories />
+          </TabPanel>
+          <TabPanel value={tabValue} index={9}>
+            <AdminBookings />
+          </TabPanel>
         </Box>
       </Box>
 
-      {/* Filter Menu */}
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
@@ -235,7 +245,6 @@ export default function AdminPage() {
         <MenuItem onClick={handleMenuClose}>Tùy chỉnh</MenuItem>
       </Menu>
 
-      {/* Success Alert */}
       {showSuccessAlert && (
         <Alert
           severity="success"

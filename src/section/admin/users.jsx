@@ -13,8 +13,26 @@ import {
   Select,
   MenuItem,
   Box,
-  Stack
+  Stack,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  FormControl,
+  InputLabel,
+  Switch,
+  FormControlLabel,
+  Grid,
+  Alert,
+  IconButton,
+  Tooltip
 } from '@mui/material';
+import {
+  Edit as EditIcon,
+  Visibility as ViewIcon,
+  Save as SaveIcon,
+  Close as CloseIcon
+} from '@mui/icons-material';
 
 const mockUsers = [
   {
@@ -22,77 +40,33 @@ const mockUsers = [
     name: 'Hoàng Minh Nhật',
     email: 'nhat@gmail.com',
     role: 'Khách thuê',
-    status: 'Hoạt động'
+    status: 'Hoạt động',
+    phone: '0123456789',
+    address: 'Hà Nội',
+    createdAt: '2024-01-01',
+    lastLogin: '2024-03-20'
   },
   {
     id: 2,
     name: 'Lê Minh Khánh',
     email: 'khanh@gmail.com',
     role: 'Chủ cho thuê',
-    status: 'Bị khóa'
+    status: 'Bị khóa',
+    phone: '0987654321',
+    address: 'TP.HCM',
+    createdAt: '2024-01-15',
+    lastLogin: '2024-03-19'
   },
   {
     id: 3,
     name: 'Trần Phước Phú',
     email: 'c@gmail.com',
     role: 'Khách thuê',
-    status: 'Hoạt động'
-  },
-  {
-    id: 1,
-    name: 'Hoàng Minh Nhật',
-    email: 'nhat@gmail.com',
-    role: 'Khách thuê',
-    status: 'Hoạt động'
-  },
-  {
-    id: 2,
-    name: 'Lê Minh Khánh',
-    email: 'khanh@gmail.com',
-    role: 'Chủ cho thuê',
-    status: 'Bị khóa'
-  },
-  {
-    id: 3,
-    name: 'Trần Phước Phú',
-    email: 'c@gmail.com',
-    role: 'Khách thuê',
-    status: 'Hoạt động'
-  },
-  {
-    id: 1,
-    name: 'Hoàng Minh Nhật',
-    email: 'nhat@gmail.com',
-    role: 'Khách thuê',
-    status: 'Hoạt động'
-  },
-  {
-    id: 2,
-    name: 'Lê Minh Khánh',
-    email: 'khanh@gmail.com',
-    role: 'Chủ cho thuê',
-    status: 'Bị khóa'
-  },
-  {
-    id: 3,
-    name: 'Trần Phước Phú',
-    email: 'c@gmail.com',
-    role: 'Khách thuê',
-    status: 'Hoạt động'
-  },
-  {
-    id: 1,
-    name: 'Hoàng Minh Nhật',
-    email: 'nhat@gmail.com',
-    role: 'Khách thuê',
-    status: 'Hoạt động'
-  },
-  {
-    id: 2,
-    name: 'Lê Minh Khánh',
-    email: 'khanh@gmail.com',
-    role: 'Chủ cho thuê',
-    status: 'Bị khóa'
+    status: 'Hoạt động',
+    phone: '0123456789',
+    address: 'Đà Nẵng',
+    createdAt: '2024-02-01',
+    lastLogin: '2024-03-18'
   }
 ];
 
@@ -101,6 +75,11 @@ export default function AdminUsers() {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [editedUser, setEditedUser] = useState(null);
 
   useEffect(() => {
     setUsers(mockUsers);
@@ -115,8 +94,49 @@ export default function AdminUsers() {
     return matchesSearch && matchesRole && matchesStatus;
   });
 
-  const handleAction = (id) => {
-    alert(`Đã xử lý tài khoản có ID: ${id}`);
+  const handleAction = (user) => {
+    setSelectedUser(user);
+    setEditedUser({ ...user });
+    setOpenDialog(true);
+    setEditMode(false);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setSelectedUser(null);
+    setEditedUser(null);
+    setEditMode(false);
+  };
+
+  const handleSaveChanges = () => {
+    const updatedUsers = users.map(user => 
+      user.id === editedUser.id ? editedUser : user
+    );
+    setUsers(updatedUsers);
+    setShowSuccessAlert(true);
+    handleCloseDialog();
+  };
+
+  const handleStatusChange = (event) => {
+    setEditedUser({
+      ...editedUser,
+      status: event.target.checked ? 'Hoạt động' : 'Bị khóa'
+    });
+  };
+
+  const handleRoleChange = (event) => {
+    setEditedUser({
+      ...editedUser,
+      role: event.target.value
+    });
+  };
+
+  const handleInputChange = (event) => {
+    const { name, value } = event.target;
+    setEditedUser({
+      ...editedUser,
+      [name]: value
+    });
   };
 
   return (
@@ -179,7 +199,7 @@ export default function AdminUsers() {
                   <Button
                     variant="contained"
                     color="primary"
-                    onClick={() => handleAction(user.id)}
+                    onClick={() => handleAction(user)}
                   >
                     Xử lý
                   </Button>
@@ -189,6 +209,143 @@ export default function AdminUsers() {
           </TableBody>
         </Table>
       </TableContainer>
+
+      <Dialog 
+        open={openDialog} 
+        onClose={handleCloseDialog}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Typography variant="h6">
+              {editMode ? 'Chỉnh sửa thông tin người dùng' : 'Thông tin người dùng'}
+            </Typography>
+            <Stack direction="row" spacing={1}>
+              {!editMode && (
+                <Tooltip title="Chỉnh sửa">
+                  <IconButton onClick={() => setEditMode(true)}>
+                    <EditIcon />
+                  </IconButton>
+                </Tooltip>
+              )}
+              <IconButton onClick={handleCloseDialog}>
+                <CloseIcon />
+              </IconButton>
+            </Stack>
+          </Stack>
+        </DialogTitle>
+        <DialogContent>
+          <Grid container spacing={3} sx={{ mt: 1 }}>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Họ tên"
+                name="name"
+                value={editedUser?.name || ''}
+                onChange={handleInputChange}
+                disabled={!editMode}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Email"
+                name="email"
+                value={editedUser?.email || ''}
+                onChange={handleInputChange}
+                disabled={!editMode}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Số điện thoại"
+                name="phone"
+                value={editedUser?.phone || ''}
+                onChange={handleInputChange}
+                disabled={!editMode}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Địa chỉ"
+                name="address"
+                value={editedUser?.address || ''}
+                onChange={handleInputChange}
+                disabled={!editMode}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth>
+                <InputLabel>Loại tài khoản</InputLabel>
+                <Select
+                  value={editedUser?.role || ''}
+                  onChange={handleRoleChange}
+                  label="Loại tài khoản"
+                  disabled={!editMode}
+                >
+                  <MenuItem value="Khách thuê">Khách thuê</MenuItem>
+                  <MenuItem value="Chủ cho thuê">Chủ cho thuê</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={editedUser?.status === 'Hoạt động'}
+                    onChange={handleStatusChange}
+                    disabled={!editMode}
+                  />
+                }
+                label="Trạng thái tài khoản"
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Ngày tạo"
+                value={editedUser?.createdAt || ''}
+                disabled
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Lần đăng nhập cuối"
+                value={editedUser?.lastLogin || ''}
+                disabled
+              />
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          {editMode && (
+            <>
+              <Button onClick={() => setEditMode(false)}>Hủy</Button>
+              <Button 
+                onClick={handleSaveChanges}
+                variant="contained"
+                startIcon={<SaveIcon />}
+              >
+                Lưu thay đổi
+              </Button>
+            </>
+          )}
+        </DialogActions>
+      </Dialog>
+
+      {showSuccessAlert && (
+        <Alert
+          severity="success"
+          onClose={() => setShowSuccessAlert(false)}
+          sx={{ position: 'fixed', bottom: 24, right: 24, zIndex: 2000 }}
+        >
+          Cập nhật thông tin người dùng thành công!
+        </Alert>
+      )}
     </Box>
   );
 }
