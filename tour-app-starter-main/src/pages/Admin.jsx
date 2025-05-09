@@ -33,6 +33,7 @@ import {
   Extension as ExtensionIcon,
   Category as CategoryIcon,
   BookOnline as BookOnlineIcon,
+  Public as PublicIcon,
 } from "@mui/icons-material";
 import PropTypes from "prop-types";
 
@@ -46,6 +47,7 @@ import AdminSystem from "../section/admin/system";
 import AdminAmenities from "../section/admin/amenities";
 import AdminCategories from "../section/admin/categories";
 import AdminBookings from "../section/admin/bookings";
+import AdminCountries from "../section/admin/countries";
 
 function TabPanel({ children, value, index }) {
   return value === index ? <Box>{children}</Box> : null;
@@ -107,16 +109,17 @@ export default function AdminPage() {
   ];
 
   const tabIcons = [
-    <DashboardIcon />, // Tổng quan
-    <PeopleIcon />, // Người dùng
-    <HomeIcon />, // Chỗ ở
-    <ReceiptIcon />, // Giao dịch
-    <ReportIcon />, // Báo cáo
-    <SupportAgentIcon />, // Hỗ trợ
-    <SettingsIcon />, // Hệ thống
-    <ExtensionIcon />, // Tiện ích
-    <CategoryIcon />, // Danh mục
-    <BookOnlineIcon />, // Đặt phòng
+    <DashboardIcon key="dashboard" />, // Tổng quan
+    <PeopleIcon key="people" />, // Người dùng
+    <HomeIcon key="home" />, // Chỗ ở
+    <ReceiptIcon key="receipt" />, // Giao dịch
+    <ReportIcon key="report" />, // Báo cáo
+    <SupportAgentIcon key="support" />, // Hỗ trợ
+    <SettingsIcon key="settings" />, // Hệ thống
+    <ExtensionIcon key="extension" />, // Tiện ích
+    <CategoryIcon key="category" />, // Danh mục
+    <BookOnlineIcon key="booking" />, // Đặt phòng
+    <PublicIcon key="public" />,
   ];
 
   return (
@@ -211,6 +214,7 @@ export default function AdminPage() {
             <Tab icon={tabIcons[7]} label="Tiện ích" />
             <Tab icon={tabIcons[8]} label="Danh mục" />
             <Tab icon={tabIcons[9]} label="Đặt phòng" />
+            <Tab icon={tabIcons[10]} label="Quốc gia" />
           </Tabs>
         </Box>
 
@@ -244,6 +248,9 @@ export default function AdminPage() {
           </TabPanel>
           <TabPanel value={tabValue} index={9}>
             <AdminBookings />
+          </TabPanel>
+          <TabPanel value={tabValue} index={10}>
+            <AdminCountries />
           </TabPanel>
         </Box>
       </Box>

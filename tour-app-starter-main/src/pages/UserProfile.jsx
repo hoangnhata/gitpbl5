@@ -33,6 +33,7 @@ const UserProfile = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [currentTab, setCurrentTab] = useState(0);
+  const [editTab, setEditTab] = useState(0);
   const [formData, setFormData] = useState({
     username: "",
     fullname: "",
@@ -40,12 +41,16 @@ const UserProfile = () => {
     phone: "",
     thumnailUrl: "", // Changed from thumbnailUrl to thumnailUrl to match API response
   });
-  const [bookedRooms, setBookedRooms] = useState([]);
+  const [bookedRooms] = useState([]);
   const [favoriteRooms, setFavoriteRooms] = useState([]);
-  const [messages, setMessages] = useState([]);
+  const [messages] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState("");
-  const [favoriteIds, setFavoriteIds] = useState([]);
+  const [passwordData, setPasswordData] = useState({
+    oldPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -74,7 +79,6 @@ const UserProfile = () => {
       const res = await axiosInstance.get("/api/users/favorites");
       if (res.data?.result?.favorites) {
         setFavoriteRooms(res.data.result.favorites);
-        setFavoriteIds(res.data.result.favorites.map((fav) => fav.id || fav));
       }
     } catch (err) {
       console.error("Error fetching favorites:", err);
@@ -150,21 +154,6 @@ const UserProfile = () => {
     }
   };
 
-  // Thêm vào favorites
-  const addFavorite = async (listingId) => {
-    try {
-      const res = await axiosInstance.post("/api/users/favorites", {
-        listingId,
-      });
-      if (res.data.code === 200) {
-        setFavoriteIds((prev) => [...prev, listingId]);
-      }
-    } catch (err) {
-      // Có thể hiển thị thông báo lỗi nếu cần
-    }
-  };
-
-  // Xóa khỏi favorites
   const deleteFavorite = async (listingId) => {
     try {
       const res = await axiosInstance.delete("/api/users/favorites", {
@@ -178,124 +167,177 @@ const UserProfile = () => {
     }
   };
 
-  // Xử lý khi ấn nút tim
-  const handleFavorite = (listingId) => {
-    if (favoriteIds.includes(listingId)) {
-      deleteFavorite(listingId);
-    } else {
-      addFavorite(listingId);
-    }
-  };
-
   const renderEditProfile = () => (
     <Card sx={{ p: 3 }}>
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-      )}
-      {success && (
-        <Alert severity="success" sx={{ mb: 3 }}>
-          Cập nhật thông tin thành công!
-        </Alert>
-      )}
+      <Tabs
+        value={editTab}
+        onChange={(_, v) => setEditTab(v)}
+        sx={{ mb: 3 }}
+        variant="fullWidth"
+      >
+        <Tab label="Chỉnh sửa thông tin" />
+        <Tab label="Đổi mật khẩu" />
+      </Tabs>
+      {editTab === 0 ? (
+        <>
+          {error && (
+            <Alert severity="error" sx={{ mb: 3 }}>
+              {error}
+            </Alert>
+          )}
+          {success && (
+            <Alert severity="success" sx={{ mb: 3 }}>
+              Cập nhật thông tin thành công!
+            </Alert>
+          )}
 
-      <form onSubmit={handleSubmit}>
-        <Stack spacing={3}>
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              mb: 3,
-            }}
-          >
-            <Avatar
-              alt={formData.username || "User"}
-              src={previewUrl || formData.thumnailUrl || "/default-avatar.png"}
-              sx={{ width: 100, height: 100, mb: 1 }}
-            />
-            <Button
-              variant="outlined"
-              component="label"
-              disabled={loading}
-              sx={{ mb: 1 }}
-            >
-              Chọn ảnh
-              <input
-                type="file"
-                accept="image/*"
-                hidden
-                onChange={handleFileChange}
+          <form onSubmit={handleSubmit}>
+            <Stack spacing={3}>
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  mb: 3,
+                }}
+              >
+                <Avatar
+                  alt={formData.username || "User"}
+                  src={
+                    previewUrl || formData.thumnailUrl || "/default-avatar.png"
+                  }
+                  sx={{ width: 100, height: 100, mb: 1 }}
+                />
+                <Button
+                  variant="outlined"
+                  component="label"
+                  disabled={loading}
+                  sx={{ mb: 1 }}
+                >
+                  Chọn ảnh
+                  <input
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    onChange={handleFileChange}
+                    disabled={loading}
+                  />
+                </Button>
+                {selectedFile && (
+                  <Typography variant="caption" color="text.secondary">
+                    {selectedFile.name}
+                  </Typography>
+                )}
+              </Box>
+
+              <TextField
+                fullWidth
+                name="username"
+                label="Tên đăng nhập"
+                value={formData.username}
+                onChange={handleChange}
+                disabled={true}
+              />
+
+              <TextField
+                fullWidth
+                name="fullname"
+                label="Họ và tên"
+                value={formData.fullname}
+                onChange={handleChange}
                 disabled={loading}
               />
+
+              <TextField
+                fullWidth
+                name="email"
+                label="Email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                disabled={loading}
+              />
+
+              <TextField
+                fullWidth
+                name="phone"
+                label="Số điện thoại"
+                value={formData.phone}
+                onChange={handleChange}
+                disabled={loading}
+              />
+
+              <Button
+                fullWidth
+                size="large"
+                type="submit"
+                variant="contained"
+                disabled={loading}
+                sx={{
+                  bgcolor: "primary.main",
+                  color: "white",
+                  "&:hover": {
+                    bgcolor: "primary.dark",
+                  },
+                }}
+              >
+                {loading ? (
+                  <CircularProgress size={24} color="inherit" />
+                ) : (
+                  "Cập nhật thông tin"
+                )}
+              </Button>
+            </Stack>
+          </form>
+        </>
+      ) : (
+        <form>
+          <Stack spacing={3}>
+            <TextField
+              label="Mật khẩu cũ"
+              name="oldPassword"
+              type="password"
+              value={passwordData.oldPassword}
+              onChange={(e) =>
+                setPasswordData((prev) => ({
+                  ...prev,
+                  oldPassword: e.target.value,
+                }))
+              }
+              required
+            />
+            <TextField
+              label="Mật khẩu mới"
+              name="newPassword"
+              type="password"
+              value={passwordData.newPassword}
+              onChange={(e) =>
+                setPasswordData((prev) => ({
+                  ...prev,
+                  newPassword: e.target.value,
+                }))
+              }
+              required
+            />
+            <TextField
+              label="Xác nhận mật khẩu mới"
+              name="confirmPassword"
+              type="password"
+              value={passwordData.confirmPassword}
+              onChange={(e) =>
+                setPasswordData((prev) => ({
+                  ...prev,
+                  confirmPassword: e.target.value,
+                }))
+              }
+              required
+            />
+            <Button type="submit" variant="contained" color="primary">
+              Đổi mật khẩu
             </Button>
-            {selectedFile && (
-              <Typography variant="caption" color="text.secondary">
-                {selectedFile.name}
-              </Typography>
-            )}
-          </Box>
-
-          <TextField
-            fullWidth
-            name="username"
-            label="Tên đăng nhập"
-            value={formData.username}
-            onChange={handleChange}
-            disabled={true}
-          />
-
-          <TextField
-            fullWidth
-            name="fullname"
-            label="Họ và tên"
-            value={formData.fullname}
-            onChange={handleChange}
-            disabled={loading}
-          />
-
-          <TextField
-            fullWidth
-            name="email"
-            label="Email"
-            type="email"
-            value={formData.email}
-            onChange={handleChange}
-            disabled={loading}
-          />
-
-          <TextField
-            fullWidth
-            name="phone"
-            label="Số điện thoại"
-            value={formData.phone}
-            onChange={handleChange}
-            disabled={loading}
-          />
-
-          <Button
-            fullWidth
-            size="large"
-            type="submit"
-            variant="contained"
-            disabled={loading}
-            sx={{
-              bgcolor: "primary.main",
-              color: "white",
-              "&:hover": {
-                bgcolor: "primary.dark",
-              },
-            }}
-          >
-            {loading ? (
-              <CircularProgress size={24} color="inherit" />
-            ) : (
-              "Cập nhật thông tin"
-            )}
-          </Button>
-        </Stack>
-      </form>
+          </Stack>
+        </form>
+      )}
     </Card>
   );
 

@@ -10,6 +10,12 @@ const RatingDisplay = ({ rating, reviewCount, reviews }) => {
   const hasHalfStar = rating % 1 >= 0.5;
   const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
 
+  const getImageUrl = (url) => {
+    if (!url) return "https://ui-avatars.com/api/?background=random&size=48";
+    if (url.startsWith("http")) return url;
+    return `http://localhost:8080/${url}`;
+  };
+
   const handleClick = () => {
     const reviewsDialog = document.createElement("dialog");
     reviewsDialog.style.cssText = `
@@ -30,6 +36,7 @@ const RatingDisplay = ({ rating, reviewCount, reviews }) => {
     `;
 
     const content = document.createElement("div");
+    console.log("reviews:", reviews);
     content.innerHTML = `
       <h2 style="margin-bottom: 24px; color: #fff; font-size: 28px;">Đánh giá của khách</h2>
       
@@ -90,9 +97,9 @@ const RatingDisplay = ({ rating, reviewCount, reviews }) => {
               <div style="border-bottom: 1px solid rgba(255,255,255,0.1); padding: 20px 0;">
                 <div style="display: flex; align-items: center; margin-bottom: 12px;">
                   <img 
-                    src="${
-                      review.thumbnailUrl || "https://via.placeholder.com/48"
-                    }" 
+                    src="${getImageUrl(
+                      review.thumbnailUrl || review.thumnailUrl
+                    )}" 
                     style="width: 48px; height: 48px; border-radius: 50%; margin-right: 16px; border: 2px solid rgba(255,255,255,0.1);"
                   />
                   <div>

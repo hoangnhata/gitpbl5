@@ -56,7 +56,7 @@ const Header = () => {
         if (userResponse.data.code === 0 || userResponse.data.code === 200) {
           const userData = userResponse.data.result;
           setUserInfo(userData);
-          setUserName(userData.username);
+          setUserName(userData.fullname || userData.username);
           localStorage.setItem("user", JSON.stringify(userData));
 
           // Set initial selected role based on current path
@@ -168,10 +168,31 @@ const Header = () => {
     >
       <Logo />
       <Inputt />
-      <IconButton onClick={handleClick}>
+      <IconButton
+        onClick={handleClick}
+        sx={{
+          "&:hover": {
+            transform: "scale(1.05)",
+            transition: "transform 0.2s ease-in-out",
+          },
+          "& .MuiAvatar-root": {
+            border: "2px solid #f44336",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+            transition: "all 0.2s ease-in-out",
+          },
+          "&:hover .MuiAvatar-root": {
+            boxShadow: "0 4px 12px rgba(244, 67, 54, 0.2)",
+          },
+        }}
+      >
         <Avatar
           alt={userName || "User"}
           src={userInfo?.thumnailUrl || "/default-avatar.png"}
+          sx={{
+            width: 40,
+            height: 40,
+            cursor: "pointer",
+          }}
         />
       </IconButton>
       <Menu
@@ -202,14 +223,16 @@ const Header = () => {
               <Avatar
                 alt={userName}
                 src={userInfo?.thumnailUrl || "/default-avatar.png"}
-                sx={{ width: 48, height: 48 }}
+                sx={{
+                  width: 56,
+                  height: 56,
+                  border: "2px solid #f44336",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                }}
               />
               <Box>
                 <Typography variant="subtitle1" fontWeight={600}>
                   {userName}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {userInfo?.email}
                 </Typography>
               </Box>
             </Box>
