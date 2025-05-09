@@ -23,17 +23,6 @@ import Image from "../components/Image";
 import { keyframes } from "@mui/system";
 import axiosInstance from "../api/axiosConfig";
 
-// Hàm tạo giờ ngẫu nhiên (ví dụ: từ 08:00 đến 20:00)
-const getRandomTime = () => {
-  const hour = Math.floor(Math.random() * (20 - 8 + 1)) + 8; // từ 8h đến 20h
-  const minute = Math.floor(Math.random() * 60);
-  const second = Math.floor(Math.random() * 60);
-
-  return `${hour.toString().padStart(2, "0")}:${minute
-    .toString()
-    .padStart(2, "0")}:${second.toString().padStart(2, "0")}`;
-};
-
 const fadeIn = keyframes`
   from {
     opacity: 0;
@@ -44,12 +33,6 @@ const fadeIn = keyframes`
     transform: translateY(0);
   }
 `;
-
-// Add this helper function if not already present
-const formatDateToISO = (dateStr) => {
-  const date = new Date(dateStr);
-  return date.toISOString().slice(0, 19);
-};
 
 const ReservationPage = () => {
   const location = useLocation();
@@ -69,12 +52,38 @@ const ReservationPage = () => {
 
   const totalSteps = 3;
   const progress = (currentStep / totalSteps) * 100;
+
   if (!roomData) {
     return (
       <Container>
-        <Typography>
-          No reservation data found. Please select a room first.
+        <Typography variant="h5" sx={{ textAlign: "center", mt: 4 }}>
+          Không tìm thấy thông tin đặt phòng. Vui lòng quay lại trang chủ và thử
+          lại.
         </Typography>
+        <Button
+          variant="contained"
+          onClick={() => navigate("/")}
+          sx={{ display: "block", mx: "auto", mt: 2 }}
+        >
+          Quay lại trang chủ
+        </Button>
+      </Container>
+    );
+  }
+
+  if (!roomData.images || !roomData.title || !roomData.price) {
+    return (
+      <Container>
+        <Typography variant="h5" sx={{ textAlign: "center", mt: 4 }}>
+          Dữ liệu phòng không hợp lệ. Vui lòng thử lại.
+        </Typography>
+        <Button
+          variant="contained"
+          onClick={() => navigate("/")}
+          sx={{ display: "block", mx: "auto", mt: 2 }}
+        >
+          Quay lại trang chủ
+        </Button>
       </Container>
     );
   }
@@ -92,43 +101,25 @@ const ReservationPage = () => {
 
   const handlePayment = async () => {
     try {
-      // Kiểm tra dữ liệu đầu vào
-      if (
-        !roomData ||
-        !roomData.totalPrice ||
-        !roomData.checkIn ||
-        !roomData.checkOut ||
-        !roomData.id
-      ) {
-        setMessage("Thiếu thông tin đặt phòng");
-        console.log("Missing data:", roomData);
+      // 1. Tạo booking trước
+      const bookingRes = await axiosInstance.post("/api/bookings", {
+        listingId: roomData.id,
+        checkInDate: roomData.checkIn,
+        checkOutDate: roomData.checkOut,
+        totalPrice: roomData.totalPrice,
+        content: "xin chaid",
+      });
+
+      const bookingId =
+        bookingRes.data?.result?.bookingId || bookingRes.data?.result?.id;
+      if (!bookingId) {
+        setMessage("Không lấy được bookingId từ API booking");
         return;
       }
 
-      // Format ngày giờ với thời gian ngẫu nhiên
-      const startDate = new Date(roomData.checkIn);
-      const [randomStartHour, randomStartMinute, randomStartSecond] =
-        getRandomTime().split(":");
-      startDate.setHours(
-        +randomStartHour,
-        +randomStartMinute,
-        +randomStartSecond
-      );
-
-      const endDate = new Date(roomData.checkOut);
-      const [randomEndHour, randomEndMinute, randomEndSecond] =
-        getRandomTime().split(":");
-      endDate.setHours(+randomEndHour, +randomEndMinute, +randomEndSecond);
-
-      // Tính tổng tiền
-      const totalAmount = Math.round(roomData.totalPrice * 1.1);
-
-      // Chuẩn bị dữ liệu gửi lên server
+      // 2. Gửi payment với bookingId vừa nhận được
       const paymentData = {
-        amount: totalAmount,
-        listingId: roomData.id,
-        startDate: formatDateToISO(startDate),
-        endDate: formatDateToISO(endDate),
+        bookingId,
         content: message,
       };
 
@@ -141,9 +132,6 @@ const ReservationPage = () => {
       const paymethod =
         paymethodMap[selectedPaymentMethod] || selectedPaymentMethod;
 
-      console.log("Sending payment data:", { ...paymentData, paymethod });
-
-      // Gửi yêu cầu thanh toán với body là JSON
       const response = await axiosInstance.post(
         "/api/payment/create-payment",
         paymentData,
@@ -153,31 +141,14 @@ const ReservationPage = () => {
         }
       );
 
-      // Log full response để debug
-      console.log("Full response:", response);
-
-      // Kiểm tra response.data
-      if (response.data) {
-        if (response.data.result) {
-          console.log("URL thanh toán:", response.data.result);
-          window.location.href = response.data.result;
-        } else {
-          console.error("Response structure:", response.data);
-          setMessage("Không tìm thấy URL thanh toán trong response");
-        }
+      if (response.data?.result) {
+        // Nếu result là URL thanh toán, chuyển hướng sang đó
+        window.location.href = response.data.result;
       } else {
-        setMessage("Không nhận được dữ liệu từ server");
+        setMessage("Không tìm thấy URL thanh toán trong response");
       }
     } catch (error) {
-      console.error("Payment error:", error);
-      if (error.response) {
-        console.log("Error response:", error.response.data);
-        setMessage(
-          error.response.data.message || "Có lỗi xảy ra khi thanh toán"
-        );
-      } else {
-        setMessage("Có lỗi xảy ra khi thanh toán");
-      }
+      setMessage("Có lỗi xảy ra khi thanh toán");
     }
   };
 
@@ -591,7 +562,11 @@ const ReservationPage = () => {
             <Box sx={{ mb: 2 }}>
               <Box sx={{ position: "relative" }}>
                 <Image
-                  src={`http://localhost:8080/${roomData.images[0]}`}
+                  src={
+                    roomData?.images?.[0]
+                      ? `http://localhost:8080/${roomData.images[0]}`
+                      : ""
+                  }
                   alt="Room Preview"
                   sx={{
                     width: "100%",
@@ -649,6 +624,11 @@ const ReservationPage = () => {
               <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
                 Thông tin chuyến đi
               </Typography>
+              {roomData.bookingId && (
+                <Typography color="primary" sx={{ fontWeight: 600 }}>
+                  Mã booking: {roomData.bookingId}
+                </Typography>
+              )}
               <Typography>
                 Ngày: {roomData.checkIn} - {roomData.checkOut}
               </Typography>

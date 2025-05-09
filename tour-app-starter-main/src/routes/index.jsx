@@ -4,6 +4,7 @@ import { Navigate, useRoutes, useLocation } from "react-router-dom";
 // components
 import LoadingScreen from "../components/LoadingScreen";
 import MainLayout from "../layout/Main";
+import ProtectedRoute from "../components/ProtectedRoute";
 
 // ----------------------------------------------------------------------
 
@@ -29,9 +30,30 @@ export default function Router() {
         { element: <HomePage />, index: true },
         { element: <PropertyPage />, path: "property/:id" },
         { element: <ReservationPage />, path: "reservation" },
-        { element: <UserProfilePage />, path: "profile" },
-        { element: <HostPage />, path: "host" },
-        { element: <AdminPage />, path: "admin" },
+        {
+          element: (
+            <ProtectedRoute requiredRole="profile">
+              <UserProfilePage />
+            </ProtectedRoute>
+          ),
+          path: "profile",
+        },
+        {
+          element: (
+            <ProtectedRoute requiredRole="host">
+              <HostPage />
+            </ProtectedRoute>
+          ),
+          path: "host",
+        },
+        {
+          element: (
+            <ProtectedRoute requiredRole="admin">
+              <AdminPage />
+            </ProtectedRoute>
+          ),
+          path: "admin",
+        },
       ],
     },
     {

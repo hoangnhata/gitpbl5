@@ -14,11 +14,11 @@ const DateRangeSelector = ({ value, setValue, startDate, endDate }) => {
 
   const shortcutItems = [
     {
-      label: "Full Available Period",
+      label: "Toàn bộ thời gian có sẵn",
       getValue: () => [minDate, maxDate],
     },
     {
-      label: "First Week",
+      label: "Tuần đầu tiên",
       getValue: () => [
         minDate,
         minDate.add(7, "days").isAfter(maxDate)
@@ -27,7 +27,7 @@ const DateRangeSelector = ({ value, setValue, startDate, endDate }) => {
       ],
     },
     {
-      label: "Last Week",
+      label: "Tuần cuối cùng",
       getValue: () => [
         maxDate.subtract(7, "days").isBefore(minDate)
           ? minDate
@@ -35,7 +35,7 @@ const DateRangeSelector = ({ value, setValue, startDate, endDate }) => {
         maxDate,
       ],
     },
-    { label: "Reset", getValue: () => [null, null] },
+    { label: "Đặt lại", getValue: () => [null, null] },
   ];
 
   return (
@@ -43,8 +43,8 @@ const DateRangeSelector = ({ value, setValue, startDate, endDate }) => {
       <Grid item xs={12}>
         <Stack spacing={2} alignItems="center">
           <Typography variant="subtitle2" sx={{ color: "text.secondary" }}>
-            Select Dates ({minDate.format("MMM D, YYYY")} -{" "}
-            {maxDate.format("MMM D, YYYY")})
+            Chọn ngày ({minDate.format("DD/MM/YYYY")} -{" "}
+            {maxDate.format("DD/MM/YYYY")})
           </Typography>
           <DateRangePicker
             slots={{

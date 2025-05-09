@@ -82,7 +82,7 @@ const Inputt = () => {
               <Grid item md={6} xs={12}>
                 <Stack spacing={{ xs: 1, md: 0 }} alignItems="center">
                   <Typography variant="subtitle2" sx={{ fontWeight: "bold" }}>
-                    Điểm đến
+                    Điểm Đến
                   </Typography>
                   {/* Location search */}
                   <LocationSearch />
@@ -102,7 +102,7 @@ const Inputt = () => {
                     alignItems="center"
                   >
                     <Typography variant="subtitle2">
-                      Ngày nhận-trả phòng
+                      Ngày Nhận-Trả Phòng
                     </Typography>
                     {isMobile ? (
                       <MobileDateRangePicker

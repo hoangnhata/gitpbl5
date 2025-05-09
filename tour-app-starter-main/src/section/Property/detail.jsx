@@ -5,6 +5,7 @@ import ReviewSection from "./components/ReviewSection";
 import BookingCard from "./components/BookingCard";
 import AmenitiesSection from "./components/AmenitiesSection";
 import AboutThisPlace from "./components/AboutThisPlace";
+import HostInfo from "./components/HostInfo";
 
 const Details = ({ property }) => {
   return (
@@ -19,11 +20,14 @@ const Details = ({ property }) => {
                 address={property.address}
                 country={property.country}
               />
+
               <Box sx={{ mb: 4 }}>
                 <ReviewSection property={property} />
               </Box>
               <Divider />
               <AboutThisPlace description={property.description} />
+              <Divider />
+              <HostInfo host={property.host} />
               <Divider />
               <AmenitiesSection amenities={property.amenites} />
               <Divider />
@@ -32,7 +36,7 @@ const Details = ({ property }) => {
             {/* Right Column - Booking Card */}
             <Grid item md={4} xs={12}>
               <BookingCard
-                id={property.id} 
+                id={property.id}
                 price={property.price}
                 startDate={property.startDate}
                 endDate={property.endDate}
@@ -52,7 +56,7 @@ const Details = ({ property }) => {
 
 Details.propTypes = {
   property: PropTypes.shape({
-    id: PropTypes.number.isRequired, 
+    id: PropTypes.number.isRequired,
     title: PropTypes.string.isRequired,
     address: PropTypes.string.isRequired,
     country: PropTypes.string.isRequired,
@@ -65,6 +69,7 @@ Details.propTypes = {
     avgStart: PropTypes.number.isRequired,
     reviews: PropTypes.number.isRequired,
     popular: PropTypes.bool,
+    host: PropTypes.object,
   }).isRequired,
 };
 

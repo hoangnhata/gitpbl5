@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import DateRangeSelector from "./DateRangeSelector";
 import PricingBreakdown from "./PricingBreakdown";
 import PropTypes from "prop-types";
+import axiosInstance from "../../../api/axiosConfig";
 
 const BookingCard = ({
   id,
@@ -27,7 +28,7 @@ const BookingCard = ({
     return price * numberOfNights;
   };
 
-  const handleReserveClick = () => {
+  const handleReserveClick = async () => {
     if (!value[0] || !value[1]) {
       alert("Vui lòng chọn ngày nhận phòng và trả phòng");
       return;
@@ -38,23 +39,46 @@ const BookingCard = ({
     );
     const totalPrice = price * numberOfNights;
 
-    navigate("/reservation", {
-      state: {
-        roomData: {
-          id: id,
-          price,
-          checkIn: value[0].toISOString().split("T")[0],
-          checkOut: value[1].toISOString().split("T")[0],
-          numberOfNights,
-          totalPrice,
-          images: images,
-          title: title,
-          avgStart: avgStart,
-          reviews: reviews,
-          popular: popular,
-        },
-      },
-    });
+    // Chuẩn bị dữ liệu gửi lên server
+    const bookingData = {
+      listingId: id,
+      checkInDate: value[0].toISOString().split("T")[0],
+      checkOutDate: value[1].toISOString().split("T")[0],
+      totalPrice: totalPrice,
+      content: "Xin chào! Tôi muốn đặt phòng này.", // hoặc cho phép nhập message nếu muốn
+    };
+
+    try {
+      const response = await axiosInstance.post("/api/bookings", bookingData);
+      if (response.data && response.data.result) {
+        // Chuyển sang trang reservation với dữ liệu booking trả về
+        navigate("/reservation", {
+          state: {
+            roomData: {
+              ...response.data.result,
+              checkIn: response.data.result.checkInDate,
+              checkOut: response.data.result.checkOutDate,
+              numberOfNights: numberOfNights,
+              totalPrice: response.data.result.totalPrice,
+              images: images,
+              title: response.data.result.title || title,
+              avgStart: response.data.result.avgStart || avgStart,
+              reviews: response.data.result.reviews || reviews,
+              popular: response.data.result.popular || popular,
+              guests: response.data.result.guests || 1,
+              price: response.data.result.price || price,
+              bookingId:
+                response.data.result.bookingId || response.data.result.id,
+              id: id,
+            },
+          },
+        });
+      } else {
+        alert("Đặt phòng thất bại. Vui lòng thử lại.");
+      }
+    } catch (error) {
+      alert(error.response?.data?.message || "Có lỗi xảy ra khi đặt phòng.");
+    }
   };
 
   return (

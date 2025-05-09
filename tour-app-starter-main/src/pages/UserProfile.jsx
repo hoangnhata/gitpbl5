@@ -167,6 +167,41 @@ const UserProfile = () => {
     }
   };
 
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess(false);
+    setLoading(true);
+    try {
+      const userData = JSON.parse(localStorage.getItem("user"));
+      if (!userData) throw new Error("Không tìm thấy thông tin người dùng");
+      const payload = {
+        username: userData.username,
+        password: passwordData.oldPassword,
+        newPassword: passwordData.newPassword,
+        verifyPassword: passwordData.confirmPassword,
+      };
+      const res = await axiosInstance.put("/api/users/password", payload);
+      if (res.data.code === 200) {
+        setSuccess(true);
+        setPasswordData({
+          oldPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
+        setTimeout(() => setSuccess(false), 3000);
+      } else {
+        setError(res.data.message || "Đổi mật khẩu thất bại");
+      }
+    } catch (err) {
+      setError(
+        err.response?.data?.message || err.message || "Đổi mật khẩu thất bại"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const renderEditProfile = () => (
     <Card sx={{ p: 3 }}>
       <Tabs
@@ -291,7 +326,7 @@ const UserProfile = () => {
           </form>
         </>
       ) : (
-        <form>
+        <form onSubmit={handleChangePassword}>
           <Stack spacing={3}>
             <TextField
               label="Mật khẩu cũ"
@@ -305,6 +340,7 @@ const UserProfile = () => {
                 }))
               }
               required
+              disabled={loading}
             />
             <TextField
               label="Mật khẩu mới"
@@ -318,6 +354,7 @@ const UserProfile = () => {
                 }))
               }
               required
+              disabled={loading}
             />
             <TextField
               label="Xác nhận mật khẩu mới"
@@ -331,9 +368,23 @@ const UserProfile = () => {
                 }))
               }
               required
+              disabled={loading}
             />
-            <Button type="submit" variant="contained" color="primary">
-              Đổi mật khẩu
+            {error && <Alert severity="error">{error}</Alert>}
+            {success && (
+              <Alert severity="success">Đổi mật khẩu thành công!</Alert>
+            )}
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              disabled={loading}
+            >
+              {loading ? (
+                <CircularProgress size={24} color="inherit" />
+              ) : (
+                "Đổi mật khẩu"
+              )}
             </Button>
           </Stack>
         </form>
