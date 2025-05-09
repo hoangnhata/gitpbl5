@@ -49,10 +49,10 @@ const PropertyType = () => {
               justifyContent="space-between"
               alignItems="center"
             >
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <Hotel sx={{ fontSize: 20 }} />
+               <Stack direction="row" alignItems="center" spacing={1}>
+                <Apartment sx={{ fontSize: 20 }} />
                 <Typography variant="caption" sx={{ fontSize: 13 }}>
-                  Khách sạn
+                  Căn hộ
                 </Typography>
               </Stack>
               <FormControlLabel
@@ -60,6 +60,17 @@ const PropertyType = () => {
                 label=""
                 sx={{ ml: "auto" }}
               />
+              {/* <Stack direction="row" alignItems="center" spacing={1}>
+                <Hotel sx={{ fontSize: 20 }} />
+                <Typography variant="caption" sx={{ fontSize: 13 }}>
+                  Khách sạn
+                </Typography>
+              </Stack> */}
+              {/* <FormControlLabel
+                control={<Checkbox size="small" />}
+                label=""
+                sx={{ ml: "auto" }}
+              /> */}
             </Stack>
           </Grid>
           <Grid item md={6}>
@@ -89,17 +100,7 @@ const PropertyType = () => {
               justifyContent="space-between"
               alignItems="center"
             >
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <Apartment sx={{ fontSize: 20 }} />
-                <Typography variant="caption" sx={{ fontSize: 13 }}>
-                  Căn hộ
-                </Typography>
-              </Stack>
-              <FormControlLabel
-                control={<Checkbox size="small" />}
-                label=""
-                sx={{ ml: "auto" }}
-              />
+             
             </Stack>
           </Grid>
         </Grid>

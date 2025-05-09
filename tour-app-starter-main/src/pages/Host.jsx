@@ -279,7 +279,7 @@ export default function HostPage() {
       if (res.data.code === 200) {
         setShowSuccessAlert(true);
         handleClosePropertyDialog();
-        // Có thể gọi lại API lấy danh sách tài sản mới nhất ở đây
+        setProperties((prev) => [...prev, res.data.newProperty]); // Thêm vào danh sách
       } else {
         alert(res.data.message || "Đăng tài sản thất bại!");
       }
@@ -386,6 +386,12 @@ export default function HostPage() {
       [selectedChat]: [...(prev[selectedChat] || []), newChatMessage],
     }));
     setNewMessage("");
+  };
+
+  const getImageUrl = (img) => {
+    if (!img) return "/default-image.png"; // fallback nếu không có ảnh
+    if (img.startsWith("http")) return img;
+    return `http://localhost:8080/${img}`; // thay bằng domain backend thật của bạn
   };
 
   return (
@@ -558,7 +564,7 @@ export default function HostPage() {
                       {property.images.map((image, index) => (
                         <ImageListItem key={index}>
                           <img
-                            src={image}
+                            src={getImageUrl(image)}
                             alt={`Property ${index + 1}`}
                             loading="lazy"
                             style={{ objectFit: "cover" }}

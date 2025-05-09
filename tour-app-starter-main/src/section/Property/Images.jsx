@@ -12,6 +12,12 @@ import { ImageSquare, X } from "@phosphor-icons/react";
 import PropTypes from "prop-types";
 import { useState } from "react";
 
+const getImageUrl = (img) => {
+  if (!img) return "/default-image.png";
+  if (img.startsWith("http")) return img;
+  return `http://localhost:8080/${img}`;
+};
+
 const Images = ({ images }) => {
   const [open, setOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
@@ -39,7 +45,7 @@ const Images = ({ images }) => {
           <>
             <Grid item xs={12} md={6}>
               <Image
-                src={`http://localhost:8080/${images[0]}`}
+                src={getImageUrl(images[0])}
                 alt="Main property image"
                 sx={{ height: 450, width: "100%", objectFit: "cover" }}
               />
@@ -49,7 +55,7 @@ const Images = ({ images }) => {
                 {images.slice(1, 5).map((image, index) => (
                   <Grid item xs={6} key={index}>
                     <Image
-                      src={`http://localhost:8080/${image}`}
+                      src={getImageUrl(image)}
                       alt={`Property image ${index + 2}`}
                       sx={{ height: 220, width: "100%", objectFit: "cover" }}
                     />
@@ -99,7 +105,7 @@ const Images = ({ images }) => {
           {selectedImage ? (
             <Box sx={{ textAlign: "center", mb: 2 }}>
               <Image
-                src={`http://localhost:8080/${selectedImage}`}
+                src={getImageUrl(selectedImage)}
                 alt="Selected property image"
                 sx={{
                   maxHeight: "70vh",
@@ -126,7 +132,7 @@ const Images = ({ images }) => {
                     onClick={() => handleImageClick(image)}
                   >
                     <Image
-                      src={`http://localhost:8080/${image}`}
+                      src={getImageUrl(image)}
                       alt={`Property image ${index + 1}`}
                       sx={{ width: "100%", height: 200, objectFit: "cover" }}
                     />

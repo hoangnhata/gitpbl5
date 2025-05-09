@@ -27,10 +27,6 @@ axiosInstance.interceptors.response.use(
       localStorage.removeItem("refreshToken");
       localStorage.removeItem("user");
       localStorage.removeItem("userName");
-
-      if (window.location.pathname !== "/login") {
-        window.location.href = "/login";
-      }
     }
     return Promise.reject(error);
   }

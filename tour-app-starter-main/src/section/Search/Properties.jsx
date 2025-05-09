@@ -14,6 +14,12 @@ const settings = {
   slidesToScroll: 1,
 };
 
+const getImageUrl = (img) => {
+  if (!img) return "/default-image.png";
+  if (img.startsWith("http")) return img;
+  return `http://localhost:8080/${img}`;
+};
+
 const Properties = ({ properties }) => {
   const [favoriteIds, setFavoriteIds] = useState([]);
   const navigate = useNavigate();
@@ -77,7 +83,7 @@ const Properties = ({ properties }) => {
                   {property.images.map((image, index) => (
                     <div key={index}>
                       <img
-                        src={`http://localhost:8080/${image}`}
+                        src={getImageUrl(image)}
                         alt={`Image ${index + 1}`}
                         style={{
                           width: "100%",
