@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -33,9 +33,9 @@ import {
   Extension as ExtensionIcon,
   Category as CategoryIcon,
   BookOnline as BookOnlineIcon,
-  Public as PublicIcon,
 } from "@mui/icons-material";
 import PropTypes from "prop-types";
+import axiosInstance from "../api/axiosConfig";
 
 import AdminDashboard from "../section/admin/dashboard";
 import AdminUsers from "../section/admin/users";
@@ -47,7 +47,6 @@ import AdminSystem from "../section/admin/system";
 import AdminAmenities from "../section/admin/amenities";
 import AdminCategories from "../section/admin/categories";
 import AdminBookings from "../section/admin/bookings";
-import AdminCountries from "../section/admin/countries";
 
 function TabPanel({ children, value, index }) {
   return value === index ? <Box>{children}</Box> : null;
@@ -64,6 +63,58 @@ export default function AdminPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [anchorEl, setAnchorEl] = useState(null);
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [listingCount, setListingCount] = useState(0);
+  const [userCount, setUserCount] = useState(0);
+  const [transactionCount, setTransactionCount] = useState(0);
+  const [totalRevenue, setTotalRevenue] = useState(0);
+
+  useEffect(() => {
+    const fetchListingCount = async () => {
+      try {
+        const response = await axiosInstance.get("/api/listings/counts");
+        setListingCount(response.data.result);
+      } catch (error) {
+        setListingCount(0);
+      }
+    };
+    fetchListingCount();
+  }, []);
+
+  useEffect(() => {
+    const fetchUserCount = async () => {
+      try {
+        const response = await axiosInstance.get("/api/users/counts");
+        setUserCount(response.data.result);
+      } catch (error) {
+        setUserCount(0);
+      }
+    };
+    fetchUserCount();
+  }, []);
+
+  useEffect(() => {
+    const fetchTransactionCount = async () => {
+      try {
+        const response = await axiosInstance.get("/api/payment/counts");
+        setTransactionCount(response.data.result);
+      } catch (error) {
+        setTransactionCount(0);
+      }
+    };
+    fetchTransactionCount();
+  }, []);
+
+  useEffect(() => {
+    const fetchTotalRevenue = async () => {
+      try {
+        const response = await axiosInstance.get("/api/payment/amount");
+        setTotalRevenue(response.data.result || 0);
+      } catch (error) {
+        setTotalRevenue(0);
+      }
+    };
+    fetchTotalRevenue();
+  }, []);
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
@@ -83,43 +134,42 @@ export default function AdminPage() {
 
   const stats = [
     {
-      title: "Tổng doanh thu",
-      value: "₫3",
-      icon: <MoneyIcon />,
-      color: "primary.main",
-    },
-    {
       title: "Người dùng",
-      value: "3",
+      value: userCount,
       icon: <PeopleIcon />,
       color: "success.main",
     },
     {
+      title: "Giao dịch",
+      value: transactionCount,
+      icon: <ReceiptIcon />,
+      color: "info.main",
+    },
+    {
       title: "Chỗ ở",
-      value: "3",
+      value: listingCount,
       icon: <HomeIcon />,
       color: "warning.main",
     },
     {
-      title: "Giao dịch",
-      value: "3",
-      icon: <ReceiptIcon />,
-      color: "info.main",
+      title: "Tổng doanh thu",
+      value: `₫${totalRevenue.toLocaleString("vi-VN")}`,
+      icon: <MoneyIcon />,
+      color: "primary.main",
     },
   ];
 
   const tabIcons = [
-    <DashboardIcon key="dashboard" />, // Tổng quan
-    <PeopleIcon key="people" />, // Người dùng
-    <HomeIcon key="home" />, // Chỗ ở
-    <ReceiptIcon key="receipt" />, // Giao dịch
-    <ReportIcon key="report" />, // Báo cáo
-    <SupportAgentIcon key="support" />, // Hỗ trợ
-    <SettingsIcon key="settings" />, // Hệ thống
-    <ExtensionIcon key="extension" />, // Tiện ích
-    <CategoryIcon key="category" />, // Danh mục
-    <BookOnlineIcon key="booking" />, // Đặt phòng
-    <PublicIcon key="public" />,
+    <DashboardIcon />, // Tổng quan
+    <PeopleIcon />, // Người dùng
+    <HomeIcon />, // Chỗ ở
+    <ReceiptIcon />, // Giao dịch
+    <ReportIcon />, // Báo cáo
+    <SupportAgentIcon />, // Hỗ trợ
+    <SettingsIcon />, // Hệ thống
+    <ExtensionIcon />, // Tiện ích
+    <CategoryIcon />, // Danh mục
+    <BookOnlineIcon />, // Đặt phòng
   ];
 
   return (
@@ -214,7 +264,6 @@ export default function AdminPage() {
             <Tab icon={tabIcons[7]} label="Tiện ích" />
             <Tab icon={tabIcons[8]} label="Danh mục" />
             <Tab icon={tabIcons[9]} label="Đặt phòng" />
-            <Tab icon={tabIcons[10]} label="Quốc gia" />
           </Tabs>
         </Box>
 
@@ -248,9 +297,6 @@ export default function AdminPage() {
           </TabPanel>
           <TabPanel value={tabValue} index={9}>
             <AdminBookings />
-          </TabPanel>
-          <TabPanel value={tabValue} index={10}>
-            <AdminCountries />
           </TabPanel>
         </Box>
       </Box>

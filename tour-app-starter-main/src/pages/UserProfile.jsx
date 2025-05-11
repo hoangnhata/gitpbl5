@@ -26,6 +26,13 @@ import {
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../api/axiosConfig";
 import PropTypes from "prop-types";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Chip from "@mui/material/Chip";
 
 const UserProfile = () => {
   const navigate = useNavigate();
@@ -41,7 +48,7 @@ const UserProfile = () => {
     phone: "",
     thumnailUrl: "", // Changed from thumbnailUrl to thumnailUrl to match API response
   });
-  const [bookedRooms] = useState([]);
+  const [bookedRooms, setBookedRooms] = useState([]);
   const [favoriteRooms, setFavoriteRooms] = useState([]);
   const [messages] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -88,6 +95,22 @@ const UserProfile = () => {
   useEffect(() => {
     fetchFavorites();
   }, []);
+
+  useEffect(() => {
+    if (currentTab === 1) {
+      const fetchBookedRooms = async () => {
+        try {
+          const res = await axiosInstance.get("/api/bookings/my");
+          if (res.data?.result) {
+            setBookedRooms(res.data.result);
+          }
+        } catch (err) {
+          setBookedRooms([]);
+        }
+      };
+      fetchBookedRooms();
+    }
+  }, [currentTab]);
 
   const handleTabChange = (event, newValue) => {
     setCurrentTab(newValue);
@@ -394,28 +417,122 @@ const UserProfile = () => {
 
   const renderBookedRooms = () => (
     <Card sx={{ p: 3 }}>
-      <Typography variant="h6" sx={{ mb: 3 }}>
+      <Typography variant="h5" sx={{ mb: 3, fontWeight: 700 }}>
         Phòng đã đặt
       </Typography>
-      {bookedRooms.length === 0 ? (
-        <Typography color="text.secondary">Bạn chưa đặt phòng nào.</Typography>
-      ) : (
-        <Grid container spacing={3}>
-          {bookedRooms.map((room) => (
-            <Grid item xs={12} md={6} key={room.id}>
-              <Paper sx={{ p: 2 }}>
-                <Typography variant="subtitle1">{room.name}</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Check-in: {room.checkIn}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Check-out: {room.checkOut}
-                </Typography>
-              </Paper>
-            </Grid>
-          ))}
-        </Grid>
-      )}
+      <TableContainer
+        component={Paper}
+        sx={{ background: "#232323", borderRadius: 3 }}
+      >
+        <Table>
+          <TableHead>
+            <TableRow sx={{ background: "#232323" }}>
+              <TableCell sx={{ color: "#fff", fontWeight: 700 }}>Ảnh</TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 700 }}>
+                Tên chỗ ở
+              </TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 700 }}>
+                Địa chỉ
+              </TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 700 }}>
+                Khu vực
+              </TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 700 }}>
+                Giá/đêm
+              </TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 700 }}>
+                Tổng tiền
+              </TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 700 }}>
+                Nhận phòng
+              </TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 700 }}>
+                Trả phòng
+              </TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 700 }}>
+                bookingStatus
+              </TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {bookedRooms.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={9}
+                  align="center"
+                  sx={{ color: "#bdbdbd", py: 6 }}
+                >
+                  Bạn chưa đặt phòng nào.
+                </TableCell>
+              </TableRow>
+            ) : (
+              bookedRooms.map((room) => (
+                <TableRow
+                  key={room.bookingId}
+                  sx={{
+                    background: "#18191a",
+                    "&:hover": { background: "#232323" },
+                    cursor: "pointer",
+                  }}
+                  onClick={() => navigate(`/property/${room.id}`)}
+                >
+                  <TableCell>
+                    <Avatar
+                      variant="rounded"
+                      src={
+                        room.primaryThumnail
+                          ? `http://localhost:8080/${room.primaryThumnail}`
+                          : "/default-room.jpg"
+                      }
+                      alt={room.title}
+                      sx={{ width: 56, height: 56 }}
+                    />
+                  </TableCell>
+                  <TableCell sx={{ color: "#fff", fontWeight: 500 }}>
+                    {room.title}
+                  </TableCell>
+                  <TableCell sx={{ color: "#fff" }}>{room.address}</TableCell>
+                  <TableCell sx={{ color: "#fff" }}>{room.city}</TableCell>
+                  <TableCell sx={{ color: "#fff" }}>
+                    {room.price ? room.price.toLocaleString() : ""} VND
+                  </TableCell>
+                  <TableCell sx={{ color: "#fff" }}>
+                    {room.totalPrice ? room.totalPrice.toLocaleString() : ""}{" "}
+                    VND
+                  </TableCell>
+                  <TableCell sx={{ color: "#fff" }}>
+                    {room.checkInDate}
+                  </TableCell>
+                  <TableCell sx={{ color: "#fff" }}>
+                    {room.checkOutDate}
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={room.bookingStatus}
+                      sx={{
+                        fontWeight: 600,
+                        color: "#fff",
+                        bgcolor:
+                          room.bookingStatus === "PENDING"
+                            ? "#fbc02d"
+                            : room.bookingStatus === "CONFIRMED"
+                            ? "#1976d2"
+                            : room.bookingStatus === "PAID"
+                            ? "#43a047"
+                            : room.bookingStatus === "CANCELLED"
+                            ? "#d32f2f"
+                            : "#757575",
+                        textTransform: "uppercase",
+                        letterSpacing: 1,
+                      }}
+                    />
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
     </Card>
   );
 
@@ -424,81 +541,108 @@ const UserProfile = () => {
       <Typography variant="h5" sx={{ mb: 4, fontWeight: 900, fontSize: 32 }}>
         Danh sách phòng yêu thích
       </Typography>
-      {favoriteRooms.length === 0 ? (
-        <Typography color="text.secondary" sx={{ fontSize: 20 }}>
-          Bạn chưa thêm phòng nào vào danh sách yêu thích.
-        </Typography>
-      ) : (
-        <Grid container spacing={4}>
-          {favoriteRooms.map((room) => (
-            <Grid item xs={12} md={6} key={room.id}>
-              <Paper
-                elevation={6}
-                sx={{
-                  p: 3,
-                  display: "flex",
-                  alignItems: "center",
-                  borderRadius: 4,
-                  cursor: "pointer",
-                  transition: "box-shadow 0.2s, background 0.2s",
-                  "&:hover": { boxShadow: 12, background: "#f3f6fa" },
-                  minHeight: 150,
-                }}
-                onClick={() => navigate(`/property/${room.id}`)}
-              >
-                <img
-                  src={`http://localhost:8080/${room.primaryThumnail}`}
-                  alt={room.title}
-                  style={{
-                    width: 120,
-                    height: 120,
-                    objectFit: "cover",
-                    borderRadius: 16,
-                    marginRight: 32,
-                    border: "2px solid #e0e0e0",
-                    background: "#fafafa",
-                    boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
-                  }}
-                />
-                <div style={{ flex: 1 }}>
-                  <Typography
-                    variant="h6"
-                    sx={{ fontWeight: 700, fontSize: 22 }}
-                  >
-                    {room.title}
-                  </Typography>
-                  <Typography
-                    variant="body1"
-                    color="text.secondary"
-                    sx={{ mb: 1, fontSize: 18 }}
-                  >
-                    Giá: <b>{room.price.toLocaleString()} VND</b> / đêm
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ fontSize: 16 }}
-                  >
-                    Thời gian: {room.startDate} - {room.endDate}
-                  </Typography>
-                </div>
-                <IconButton
-                  color="error"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteFavorite(room.id);
-                  }}
-                  sx={{ ml: 3 }}
-                  title="Bỏ yêu thích"
-                  size="large"
+      <TableContainer
+        component={Paper}
+        sx={{ background: "#232323", borderRadius: 3 }}
+      >
+        <Table>
+          <TableHead>
+            <TableRow sx={{ background: "#232323" }}>
+              <TableCell sx={{ color: "#fff", fontWeight: 700 }}>Ảnh</TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 700 }}>
+                Tên chỗ ở
+              </TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 700 }}>
+                Địa chỉ
+              </TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 700 }}>
+                Khu vực
+              </TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 700 }}>
+                Giá/đêm
+              </TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 700 }}>
+                Chủ sở hữu
+              </TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 700 }}>
+                Hành động
+              </TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {favoriteRooms.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={7}
+                  align="center"
+                  sx={{ color: "#bdbdbd", py: 6 }}
                 >
-                  <FavoriteIcon sx={{ fontSize: 40 }} />
-                </IconButton>
-              </Paper>
-            </Grid>
-          ))}
-        </Grid>
-      )}
+                  Bạn chưa thêm phòng nào vào danh sách yêu thích.
+                </TableCell>
+              </TableRow>
+            ) : (
+              favoriteRooms.map((room) => (
+                <TableRow
+                  key={room.id}
+                  sx={{
+                    background: "#18191a",
+                    "&:hover": { background: "#232323" },
+                    cursor: "pointer",
+                  }}
+                  onClick={() => navigate(`/property/${room.id}`)}
+                >
+                  <TableCell>
+                    <Avatar
+                      variant="rounded"
+                      src={
+                        room.primaryThumnail
+                          ? `http://localhost:8080/${room.primaryThumnail}`
+                          : "/default-room.jpg"
+                      }
+                      alt={room.title}
+                      sx={{ width: 56, height: 56 }}
+                    />
+                  </TableCell>
+                  <TableCell sx={{ color: "#fff", fontWeight: 500 }}>
+                    {room.title}
+                  </TableCell>
+                  <TableCell sx={{ color: "#fff" }}>
+                    {room.address || "-"}
+                  </TableCell>
+                  <TableCell sx={{ color: "#fff" }}>
+                    {room.city || "-"}
+                  </TableCell>
+                  <TableCell sx={{ color: "#fff" }}>
+                    {room.price ? room.price.toLocaleString() : ""} VND
+                  </TableCell>
+                  <TableCell sx={{ color: "#fff" }}>
+                    {room.owner || "-"}
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      color="error"
+                      variant="contained"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteFavorite(room.id);
+                      }}
+                      sx={{
+                        fontWeight: 700,
+                        borderRadius: 2,
+                        px: 2,
+                        background: "#b71c1c",
+                        "&:hover": { background: "#c62828" },
+                      }}
+                    >
+                      Bỏ yêu thích
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
     </Card>
   );
 

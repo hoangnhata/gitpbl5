@@ -17,9 +17,12 @@ import {
   PersonAddRounded,
   LogoutRounded,
   PersonRounded,
+  AdminPanelSettings,
+  Home,
+  Info,
+  ConfirmationNumber,
+  Dashboard,
 } from "@mui/icons-material";
-import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
-import HomeIcon from "@mui/icons-material/Home";
 import axiosInstance from "../../api/axiosConfig";
 
 const Header = () => {
@@ -32,6 +35,8 @@ const Header = () => {
   const isHostPage = location.pathname.startsWith("/host");
   const isProfilePage = location.pathname.startsWith("/profile");
   const isAdminPage = location.pathname.startsWith("/admin");
+  const isPropertyPage = location.pathname.startsWith("/property/");
+  const isReservationPage = location.pathname.startsWith("/reservation");
   const isHost = userInfo?.roles?.includes("HOST");
   const isAdmin = userInfo?.roles?.includes("ADMIN");
 
@@ -155,6 +160,99 @@ const Header = () => {
 
   const isLoggedIn = !!userName;
 
+  const getPageTitle = () => {
+    if (isAdminPage)
+      return {
+        text: "Hệ thống quản trị",
+        icon: <Dashboard sx={{ fontSize: 28, mr: 1 }} />,
+      };
+    if (isHostPage)
+      return {
+        text: "Quản lý chỗ nghỉ",
+        icon: <Home sx={{ fontSize: 28, mr: 1 }} />,
+      };
+    if (isProfilePage)
+      return {
+        text: "Tài khoản của tôi",
+        icon: <PersonRounded sx={{ fontSize: 28, mr: 1 }} />,
+      };
+    if (isPropertyPage)
+      return {
+        text: "Thông tin chi tiết",
+        icon: <Info sx={{ fontSize: 28, mr: 1 }} />,
+      };
+    if (isReservationPage)
+      return {
+        text: "Xác nhận đặt phòng",
+        icon: <ConfirmationNumber sx={{ fontSize: 28, mr: 1 }} />,
+      };
+    return null;
+  };
+
+  const renderCenterContent = () => {
+    const titleData = getPageTitle();
+    if (titleData) {
+      return (
+        <Box
+          sx={{
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            mx: 2,
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              background: "rgba(255, 56, 92, 0.05)",
+              padding: "8px 24px",
+              borderRadius: "12px",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+              transition: "all 0.3s ease",
+              "&:hover": {
+                transform: "translateY(-1px)",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+              },
+            }}
+          >
+            {titleData.icon}
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: 600,
+                background: "linear-gradient(45deg, #FF385C 30%, #E61E4D 90%)",
+                backgroundClip: "text",
+                textFillColor: "transparent",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                textAlign: "center",
+                letterSpacing: "0.5px",
+                position: "relative",
+                "&::after": {
+                  content: '""',
+                  position: "absolute",
+                  bottom: -4,
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  width: "40%",
+                  height: "2px",
+                  background:
+                    "linear-gradient(45deg, #FF385C 30%, #E61E4D 90%)",
+                  borderRadius: "2px",
+                },
+              }}
+            >
+              {titleData.text}
+            </Typography>
+          </Box>
+        </Box>
+      );
+    }
+    return <Inputt />;
+  };
+
   return (
     <Box
       sx={{
@@ -167,7 +265,7 @@ const Header = () => {
       }}
     >
       <Logo />
-      <Inputt />
+      {renderCenterContent()}
       <IconButton
         onClick={handleClick}
         sx={{
@@ -253,14 +351,12 @@ const Header = () => {
               >
                 <ListItemIcon>
                   {role === "ADMIN" && (
-                    <AdminPanelSettingsIcon
+                    <AdminPanelSettings
                       color={selectedRole === role ? "error" : "inherit"}
                     />
                   )}
                   {role === "HOST" && (
-                    <HomeIcon
-                      color={selectedRole === role ? "error" : "inherit"}
-                    />
+                    <Home color={selectedRole === role ? "error" : "inherit"} />
                   )}
                   {role === "USER" && (
                     <PersonRounded

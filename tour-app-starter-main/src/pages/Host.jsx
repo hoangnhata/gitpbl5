@@ -33,6 +33,7 @@ import {
   Alert,
   InputAdornment,
   Select,
+  CircularProgress,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -202,6 +203,7 @@ export default function HostPage() {
   const [openPropertyDialog, setOpenPropertyDialog] = useState(false);
   const [imageFiles, setImageFiles] = useState([]);
   const [countryOptions, setCountryOptions] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const [newProperty, setNewProperty] = useState({
     title: "",
@@ -250,6 +252,7 @@ export default function HostPage() {
 
   const handleSaveProperty = async () => {
     try {
+      setIsLoading(true);
       const formData = new FormData();
       formData.append("title", newProperty.title);
       formData.append("description", newProperty.description);
@@ -276,15 +279,17 @@ export default function HostPage() {
         },
       });
 
-      if (res.data.code === 200) {
+      if (res.data && (res.data.code === 200 || res.status === 200)) {
         setShowSuccessAlert(true);
         handleClosePropertyDialog();
-        setProperties((prev) => [...prev, res.data.newProperty]); // Thêm vào danh sách
+        setProperties((prev) => [...prev, res.data.newProperty]);
       } else {
         alert(res.data.message || "Đăng tài sản thất bại!");
       }
     } catch (err) {
       alert("Có lỗi xảy ra khi đăng tài sản!");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -1147,9 +1152,18 @@ export default function HostPage() {
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClosePropertyDialog}>Hủy</Button>
-          <Button onClick={handleSaveProperty} variant="contained">
-            Lưu
+          <Button onClick={handleClosePropertyDialog} disabled={isLoading}>
+            Hủy
+          </Button>
+          <Button
+            onClick={handleSaveProperty}
+            variant="contained"
+            disabled={isLoading}
+            startIcon={
+              isLoading ? <CircularProgress size={20} color="inherit" /> : null
+            }
+          >
+            {isLoading ? "Đang tải lên..." : "Lưu"}
           </Button>
         </DialogActions>
       </Dialog>

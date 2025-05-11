@@ -146,7 +146,7 @@ const Properties = ({ properties }) => {
                     color="textSecondary"
                     sx={{ marginBottom: 1 }}
                   >
-                    {property.address}, {property.country}
+                    {property.address}, {property.city}, {property.country}
                   </Typography>
                   <Box
                     sx={{

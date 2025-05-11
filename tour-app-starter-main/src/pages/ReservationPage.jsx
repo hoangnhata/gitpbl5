@@ -101,23 +101,13 @@ const ReservationPage = () => {
 
   const handlePayment = async () => {
     try {
-      // 1. Tạo booking trước
-      const bookingRes = await axiosInstance.post("/api/bookings", {
-        listingId: roomData.id,
-        checkInDate: roomData.checkIn,
-        checkOutDate: roomData.checkOut,
-        totalPrice: roomData.totalPrice,
-        content: "xin chaid",
-      });
-
-      const bookingId =
-        bookingRes.data?.result?.bookingId || bookingRes.data?.result?.id;
+      // Lấy bookingId từ roomData đã truyền sang
+      const bookingId = roomData.bookingId || roomData.id;
       if (!bookingId) {
-        setMessage("Không lấy được bookingId từ API booking");
+        setMessage("Không tìm thấy bookingId.");
         return;
       }
-
-      // 2. Gửi payment với bookingId vừa nhận được
+      // Gửi payment với bookingId đã có
       const paymentData = {
         bookingId,
         content: message,
@@ -142,7 +132,6 @@ const ReservationPage = () => {
       );
 
       if (response.data?.result) {
-        // Nếu result là URL thanh toán, chuyển hướng sang đó
         window.location.href = response.data.result;
       } else {
         setMessage("Không tìm thấy URL thanh toán trong response");
@@ -459,10 +448,14 @@ const ReservationPage = () => {
           {favoriteRooms.map((room) => (
             <Grid item xs={12} md={6} key={room.id}>
               <Paper sx={{ p: 2, display: "flex", alignItems: "center" }}>
-                <img
-                  src={`http://localhost:8080/${room.primaryThumbnail}`}
+                <Image
+                  src={
+                    room.primaryThumbnail.startsWith("http")
+                      ? room.primaryThumbnail
+                      : `http://localhost:8080/${room.primaryThumbnail}`
+                  }
                   alt={room.title}
-                  style={{
+                  sx={{
                     width: 80,
                     height: 80,
                     objectFit: "cover",
@@ -527,8 +520,16 @@ const ReservationPage = () => {
 
       <Grid container spacing={3}>
         <Grid item xs={12} md={8}>
-          <Typography variant="h4" sx={{ mb: 4 }}>
-            Yêu cầu đặt phòng/đặt chỗ
+          <Typography
+            variant="h4"
+            sx={{
+              mb: 4,
+              textAlign: "center",
+              color: "primary.main",
+              fontWeight: 600,
+            }}
+          >
+            Đặt phòng
           </Typography>
 
           {[1, 2, 3].map((step) => (
@@ -564,7 +565,9 @@ const ReservationPage = () => {
                 <Image
                   src={
                     roomData?.images?.[0]
-                      ? `http://localhost:8080/${roomData.images[0]}`
+                      ? roomData.images[0].startsWith("http")
+                        ? roomData.images[0]
+                        : `http://localhost:8080/${roomData.images[0]}`
                       : ""
                   }
                   alt="Room Preview"
