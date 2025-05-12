@@ -27,7 +27,9 @@ const Details = ({ property }) => {
               <Divider />
               <AboutThisPlace description={property.description} />
               <Divider />
-              <HostInfo host={property.host} />
+              <HostInfo
+                hostId={property.hostId ? String(property.hostId) : undefined}
+              />
               <Divider />
               <AmenitiesSection amenities={property.amenites} />
               <Divider />
@@ -69,7 +71,7 @@ Details.propTypes = {
     avgStart: PropTypes.number.isRequired,
     reviews: PropTypes.number.isRequired,
     popular: PropTypes.bool,
-    host: PropTypes.object,
+    hostId: PropTypes.number,
   }).isRequired,
 };
 

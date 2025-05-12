@@ -8,6 +8,7 @@ import {
   Grid,
   Divider,
   Button,
+  CircularProgress,
 } from "@mui/material";
 import PropTypes from "prop-types";
 import StarIcon from "@mui/icons-material/Star";
@@ -15,26 +16,66 @@ import LanguageIcon from "@mui/icons-material/Language";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
-import { useState } from "react";
-
-const defaultHost = {
-  name: "Prateek",
-  reviews: 473,
-  rating: 4.26,
-  yearsHosting: 8,
-  languages: ["English", "French", "Hindi"],
-  location: "Jaipur, India",
-  description:
-    "Hi All! I am Prateek Jain C/O Le Pensions Stays & Enterprises Pvt Ltd. By qualification, I am a chartered Accountant from The Institute of Chartered Accountants of India. But at heart, I have always been an entrepreneur. Our team has a collective experience of more than 24 years in hospitality and we love what we do. Le Pension Stays is a brand that stands for comfort, safety, and a memorable experience.",
-  avatar: "https://ui-avatars.com/api/?name=Prateek&background=random",
-};
+import { useState, useEffect } from "react";
+import axiosInstance from "../../../api/axiosConfig";
 
 const MAX_DESC = 180;
 
-const HostInfo = ({ host }) => {
-  const data = host || defaultHost;
+const HostInfo = ({ hostId }) => {
+  const [host, setHost] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [showMore, setShowMore] = useState(false);
-  const desc = data.description;
+
+  useEffect(() => {
+    const fetchHostInfo = async () => {
+      try {
+        setLoading(true);
+        if (!hostId) throw new Error("Không có hostId");
+        const res = await axiosInstance.get(`/api/users/host/${hostId}`);
+        if (res.data && res.data.result) {
+          setHost({
+            name: res.data.result.fullname || "Prateek",
+            avatar:
+              res.data.result.thumnailUrl ||
+              "https://ui-avatars.com/api/?name=Prateek&background=random",
+            reviews: 473,
+            rating: 4.26,
+            yearsHosting: res.data.result.didHostYear || 8,
+            languages: Array.isArray(res.data.result.languages)
+              ? res.data.result.languages
+              : res.data.result.languages
+              ? [res.data.result.languages]
+              : ["English", "French", "Hindi"],
+            country: res.data.result.country || "Jaipur, India",
+            description: res.data.result.description || "Hi All! ...",
+          });
+        }
+      } catch (err) {
+        setHost(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchHostInfo();
+  }, [hostId]);
+
+  if (loading) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (!hostId) {
+    return (
+      <Typography align="center" color="text.secondary">
+        Không có hostId để lấy thông tin host
+      </Typography>
+    );
+  }
+
+  const desc = host.description || "";
   const isLong = desc.length > MAX_DESC;
   const displayDesc =
     showMore || !isLong ? desc : desc.slice(0, MAX_DESC) + "...";
@@ -58,8 +99,8 @@ const HostInfo = ({ host }) => {
             sx={{ display: "flex", justifyContent: "center" }}
           >
             <Avatar
-              src={data.avatar}
-              alt={data.name}
+              src={host.avatar}
+              alt={host.name}
               sx={{ width: 90, height: 90, fontSize: 36, bgcolor: "#222" }}
             />
           </Grid>
@@ -72,7 +113,7 @@ const HostInfo = ({ host }) => {
               }}
             >
               <Typography variant="h5" fontWeight={700} sx={{ color: "#fff" }}>
-                {data.name}
+                {host.name}
               </Typography>
               <Typography variant="subtitle2" sx={{ color: "#aaa", mb: 1 }}>
                 Host
@@ -83,7 +124,7 @@ const HostInfo = ({ host }) => {
                     variant="body2"
                     sx={{ color: "#fff", fontWeight: 600 }}
                   >
-                    {data.reviews}
+                    {host.reviews}
                   </Typography>
                   <Typography variant="caption" sx={{ color: "#aaa" }}>
                     Reviews
@@ -99,7 +140,7 @@ const HostInfo = ({ host }) => {
                     variant="body2"
                     sx={{ color: "#fff", fontWeight: 600 }}
                   >
-                    {data.rating}
+                    {host.rating}
                   </Typography>
                   <StarIcon sx={{ color: "#FFD700", fontSize: 18, ml: 0.5 }} />
                   <Typography variant="caption" sx={{ color: "#aaa", ml: 0.5 }}>
@@ -116,7 +157,7 @@ const HostInfo = ({ host }) => {
                     variant="body2"
                     sx={{ color: "#fff", fontWeight: 600 }}
                   >
-                    {data.yearsHosting} Years
+                    {host.yearsHosting} Years
                   </Typography>
                   <Typography variant="caption" sx={{ color: "#aaa" }}>
                     Hosting
@@ -130,13 +171,13 @@ const HostInfo = ({ host }) => {
         <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 1 }}>
           <LanguageIcon sx={{ color: "#aaa" }} />
           <Typography variant="body2" sx={{ color: "#fff" }}>
-            Speaks {data.languages.join(", ")}
+            Speaks {host.languages.join(", ")}
           </Typography>
         </Stack>
         <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
           <LocationOnIcon sx={{ color: "#aaa" }} />
           <Typography variant="body2" sx={{ color: "#fff" }}>
-            Lives in {data.location}
+            Lives in {host.country}
           </Typography>
         </Stack>
         <Typography variant="body2" sx={{ color: "#fff", mb: 1 }}>
@@ -163,16 +204,7 @@ const HostInfo = ({ host }) => {
 };
 
 HostInfo.propTypes = {
-  host: PropTypes.shape({
-    name: PropTypes.string,
-    reviews: PropTypes.number,
-    rating: PropTypes.number,
-    yearsHosting: PropTypes.number,
-    languages: PropTypes.arrayOf(PropTypes.string),
-    location: PropTypes.string,
-    description: PropTypes.string,
-    avatar: PropTypes.string,
-  }),
+  hostId: PropTypes.string,
 };
 
 export default HostInfo;

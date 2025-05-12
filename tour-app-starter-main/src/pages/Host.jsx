@@ -34,6 +34,7 @@ import {
   InputAdornment,
   Select,
   CircularProgress,
+  CardContent,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -55,10 +56,13 @@ import {
   EmojiEmotions as EmojiIcon,
   Home as HomeIcon,
   AdminPanelSettings as AdminPanelSettingsIcon,
+  Language as LanguageIcon,
+  LocationOn as LocationOnIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
 } from "@mui/icons-material";
 import PropTypes from "prop-types";
 import axiosInstance from "../api/axiosConfig";
-import HostInfo from "../section/Property/components/HostInfo";
 
 // Mock data for demonstration
 const mockProperties = [
@@ -220,20 +224,55 @@ export default function HostPage() {
     amenites: [],
   });
 
-  // Thêm state cho host
-  const [host, setHost] = useState({
-    name: "Prateek",
-    reviews: 473,
-    rating: 4.26,
-    yearsHosting: 8,
-    languages: ["English", "French", "Hindi"],
-    location: "Jaipur, India",
-    description:
-      "Hi All! I am Prateek Jain C/O Le Pensions Stays & Enterprises Pvt Ltd. By qualification, I am a chartered Accountant from The Institute of Chartered Accountants of India. But at heart, I have always been an entrepreneur. Our team has a collective experience of more than 24 years in hospitality and we love what we do. Le Pension Stays is a brand that stands for comfort, safety, and a memorable experience.",
-    avatar: "https://ui-avatars.com/api/?name=Prateek&background=random",
+  const [hostInfo, setHostInfo] = useState(null);
+  const [loadingHost, setLoadingHost] = useState(true);
+  const [showMore, setShowMore] = useState(false);
+
+  const [hostEdit, setHostEdit] = useState({
+    name: "",
+    location: "",
+    languages: [],
+    yearsHosting: 0,
+    description: "",
   });
-  const [hostEdit, setHostEdit] = useState(host);
-  const [hostAvatarPreview, setHostAvatarPreview] = useState(host.avatar);
+
+  const [hostAvatarPreview, setHostAvatarPreview] = useState(null);
+
+  const fetchHostInfo = async () => {
+    try {
+      setLoadingHost(true);
+      const user = JSON.parse(localStorage.getItem("user"));
+      if (!user || !user.id)
+        throw new Error("Không tìm thấy thông tin người dùng");
+      const res = await axiosInstance.get(`/api/users/host/${user.id}`);
+      if (res.data && res.data.result) {
+        setHostInfo({
+          name: res.data.result.fullname || "Prateek",
+          avatar:
+            res.data.result.thumnailUrl ||
+            "https://ui-avatars.com/api/?name=Prateek&background=random",
+          reviews: 473,
+          rating: 4.26,
+          yearsHosting: res.data.result.didHostYear || 8,
+          languages: Array.isArray(res.data.result.languages)
+            ? res.data.result.languages
+            : res.data.result.languages
+            ? [res.data.result.languages]
+            : ["English", "French", "Hindi"],
+          country: res.data.result.country || "Jaipur, India",
+          description: res.data.result.description || "Hi All! ...",
+        });
+      }
+    } catch (err) {
+      setHostInfo(null);
+    } finally {
+      setLoadingHost(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchHostInfo();
+  }, []);
 
   useEffect(() => {
     axiosInstance.get("/api/countries").then((res) => {
@@ -415,6 +454,12 @@ export default function HostPage() {
     return `http://localhost:8080/${img}`; // thay bằng domain backend thật của bạn
   };
 
+  const MAX_DESC = 180;
+  const desc = hostInfo?.description || "";
+  const isLong = desc.length > MAX_DESC;
+  const displayDesc =
+    showMore || !isLong ? desc : desc.slice(0, MAX_DESC) + "...";
+
   return (
     <Container maxWidth="lg">
       <Box sx={{ mt: 4, mb: 4 }}>
@@ -578,7 +623,187 @@ export default function HostPage() {
         {/* Tab Thông tin Host */}
         <TabPanel value={tabValue} index={0}>
           <Box sx={{ maxWidth: 700, mx: "auto" }}>
-            <HostInfo host={host} />
+            {/* Hiển thị thông tin host */}
+            {loadingHost ? (
+              <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
+                <CircularProgress />
+              </Box>
+            ) : !hostInfo ? (
+              <Typography align="center" color="text.secondary">
+                Chưa có thông tin host
+              </Typography>
+            ) : (
+              <Card
+                sx={{
+                  my: 3,
+                  boxShadow: 3,
+                  borderRadius: 3,
+                  p: 2,
+                  color: "#fff",
+                }}
+              >
+                <CardContent>
+                  <Grid
+                    container
+                    spacing={2}
+                    alignItems="center"
+                    justifyContent="center"
+                  >
+                    <Grid
+                      item
+                      xs={12}
+                      md={4}
+                      sx={{ display: "flex", justifyContent: "center" }}
+                    >
+                      <Avatar
+                        src={hostInfo.avatar}
+                        alt={hostInfo.name}
+                        sx={{
+                          width: 90,
+                          height: 90,
+                          fontSize: 36,
+                          bgcolor: "#222",
+                        }}
+                      />
+                    </Grid>
+                    <Grid item xs={12} md={8}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: { xs: "center", md: "flex-start" },
+                        }}
+                      >
+                        <Typography
+                          variant="h5"
+                          fontWeight={700}
+                          sx={{ color: "#fff" }}
+                        >
+                          {hostInfo.name}
+                        </Typography>
+                        <Typography
+                          variant="subtitle2"
+                          sx={{ color: "#aaa", mb: 1 }}
+                        >
+                          Host
+                        </Typography>
+                        <Grid container spacing={2} alignItems="center">
+                          <Grid item>
+                            <Typography
+                              variant="body2"
+                              sx={{ color: "#fff", fontWeight: 600 }}
+                            >
+                              {hostInfo.reviews}
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              sx={{ color: "#aaa" }}
+                            >
+                              Reviews
+                            </Typography>
+                          </Grid>
+                          <Divider
+                            orientation="vertical"
+                            flexItem
+                            sx={{ mx: 1, borderColor: "#333" }}
+                          />
+                          <Grid
+                            item
+                            sx={{ display: "flex", alignItems: "center" }}
+                          >
+                            <Typography
+                              variant="body2"
+                              sx={{ color: "#fff", fontWeight: 600 }}
+                            >
+                              {hostInfo.rating}
+                            </Typography>
+                            <span
+                              style={{
+                                color: "#FFD700",
+                                fontSize: 18,
+                                marginLeft: 4,
+                              }}
+                            >
+                              ★
+                            </span>
+                            <Typography
+                              variant="caption"
+                              sx={{ color: "#aaa", ml: 0.5 }}
+                            >
+                              Rating
+                            </Typography>
+                          </Grid>
+                          <Divider
+                            orientation="vertical"
+                            flexItem
+                            sx={{ mx: 1, borderColor: "#333" }}
+                          />
+                          <Grid item>
+                            <Typography
+                              variant="body2"
+                              sx={{ color: "#fff", fontWeight: 600 }}
+                            >
+                              {hostInfo.yearsHosting} Years
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              sx={{ color: "#aaa" }}
+                            >
+                              Hosting
+                            </Typography>
+                          </Grid>
+                        </Grid>
+                      </Box>
+                    </Grid>
+                  </Grid>
+                  <Divider sx={{ my: 2, borderColor: "#333" }} />
+                  <Stack
+                    direction="row"
+                    spacing={2}
+                    alignItems="center"
+                    sx={{ mb: 1 }}
+                  >
+                    <LanguageIcon sx={{ color: "#aaa" }} />
+                    <Typography variant="body2" sx={{ color: "#fff" }}>
+                      Speaks {hostInfo.languages.join(", ")}
+                    </Typography>
+                  </Stack>
+                  <Stack
+                    direction="row"
+                    spacing={2}
+                    alignItems="center"
+                    sx={{ mb: 2 }}
+                  >
+                    <LocationOnIcon sx={{ color: "#aaa" }} />
+                    <Typography variant="body2" sx={{ color: "#fff" }}>
+                      Lives in {hostInfo.country}
+                    </Typography>
+                  </Stack>
+                  <Typography variant="body2" sx={{ color: "#fff", mb: 1 }}>
+                    {displayDesc}
+                    {isLong && (
+                      <Button
+                        size="small"
+                        sx={{
+                          color: "#ff385c",
+                          textTransform: "none",
+                          ml: 1,
+                          fontWeight: 600,
+                        }}
+                        endIcon={
+                          showMore ? <ExpandLessIcon /> : <ExpandMoreIcon />
+                        }
+                        onClick={() => setShowMore((v) => !v)}
+                      >
+                        {showMore ? "Show Less" : "Show More"}
+                      </Button>
+                    )}
+                  </Typography>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Chỉnh sửa thông tin Host */}
             <Card sx={{ p: 3, mt: 3 }}>
               <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
                 Chỉnh sửa thông tin Host
@@ -587,7 +812,7 @@ export default function HostPage() {
                 component="form"
                 onSubmit={(e) => {
                   e.preventDefault();
-                  setHost({ ...hostEdit, avatar: hostAvatarPreview });
+                  // Xử lý lưu thông tin host ở đây
                 }}
                 sx={{ display: "flex", flexDirection: "column", gap: 2 }}
               >
@@ -630,7 +855,11 @@ export default function HostPage() {
                 />
                 <TextField
                   label="Ngôn ngữ (phân cách bởi dấu phẩy)"
-                  value={hostEdit.languages.join(", ")}
+                  value={
+                    Array.isArray(hostEdit.languages)
+                      ? hostEdit.languages.join(", ")
+                      : ""
+                  }
                   onChange={(e) =>
                     setHostEdit({
                       ...hostEdit,
