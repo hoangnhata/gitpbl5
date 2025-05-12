@@ -33,6 +33,7 @@ import {
   Extension as ExtensionIcon,
   Category as CategoryIcon,
   BookOnline as BookOnlineIcon,
+  Public as PublicIcon,
 } from "@mui/icons-material";
 import PropTypes from "prop-types";
 import axiosInstance from "../api/axiosConfig";
@@ -47,6 +48,7 @@ import AdminSystem from "../section/admin/system";
 import AdminAmenities from "../section/admin/amenities";
 import AdminCategories from "../section/admin/categories";
 import AdminBookings from "../section/admin/bookings";
+import AdminCountries from "../section/admin/countries";
 
 function TabPanel({ children, value, index }) {
   return value === index ? <Box>{children}</Box> : null;
@@ -160,16 +162,17 @@ export default function AdminPage() {
   ];
 
   const tabIcons = [
-    <DashboardIcon />, // Tổng quan
-    <PeopleIcon />, // Người dùng
-    <HomeIcon />, // Chỗ ở
-    <ReceiptIcon />, // Giao dịch
-    <ReportIcon />, // Báo cáo
-    <SupportAgentIcon />, // Hỗ trợ
-    <SettingsIcon />, // Hệ thống
-    <ExtensionIcon />, // Tiện ích
-    <CategoryIcon />, // Danh mục
-    <BookOnlineIcon />, // Đặt phòng
+    <DashboardIcon />, 
+    <PeopleIcon />,
+    <HomeIcon />, 
+    <ReceiptIcon />,
+    <ReportIcon />,
+    <SupportAgentIcon />,
+    <SettingsIcon />, 
+    <ExtensionIcon />, 
+    <CategoryIcon />, 
+    <BookOnlineIcon />,
+    <PublicIcon />,
   ];
 
   return (
@@ -263,7 +266,8 @@ export default function AdminPage() {
             <Tab icon={tabIcons[6]} label="Hệ thống" />
             <Tab icon={tabIcons[7]} label="Tiện ích" />
             <Tab icon={tabIcons[8]} label="Danh mục" />
-            <Tab icon={tabIcons[9]} label="Đặt phòng" />
+            <Tab icon={tabIcons[9]} label="Đơn đặt phòng" />
+            <Tab icon={tabIcons[10]} label="Quốc gia" />
           </Tabs>
         </Box>
 
@@ -297,6 +301,9 @@ export default function AdminPage() {
           </TabPanel>
           <TabPanel value={tabValue} index={9}>
             <AdminBookings />
+          </TabPanel>
+          <TabPanel value={tabValue} index={10}>
+            <AdminCountries />
           </TabPanel>
         </Box>
       </Box>

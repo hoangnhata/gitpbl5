@@ -20,6 +20,7 @@ import "react-lazy-load-image-component/src/effects/black-and-white.css";
 // contexts
 import { SettingsProvider } from "./contexts/SettingsContext";
 import { CollapseDrawerProvider } from "./contexts/CollapseDrawerContext";
+import { SearchProvider } from "./contexts/SearchContext";
 
 // redux
 import { store, persistor } from "./redux/store";
@@ -37,9 +38,11 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <SettingsProvider>
               <CollapseDrawerProvider>
-                <BrowserRouter>
-                  <App />
-                </BrowserRouter>
+                <SearchProvider>
+                  <BrowserRouter>
+                    <App />
+                  </BrowserRouter>
+                </SearchProvider>
               </CollapseDrawerProvider>
             </SettingsProvider>
           </LocalizationProvider>

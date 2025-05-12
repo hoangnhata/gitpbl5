@@ -1,11 +1,14 @@
 import { Box, Tab, Tabs } from "@mui/material";
 import PropTypes from "prop-types";
 import { useState, useEffect } from "react";
-import Properties from "./Properties";  // Import Properties component
+import Properties from "./Properties"; // Import Properties component
+import CategoryIcon from "@mui/icons-material/Category";
 
 CardView.propTypes = {
   value: PropTypes.number,
   handleChangeTab: PropTypes.func,
+  searchResults: PropTypes.array, // Thêm prop cho kết quả tìm kiếm
+  isSearching: PropTypes.bool, // Thêm prop để biết đang trong trạng thái tìm kiếm
 };
 
 function CustomTabPanel(props) {
@@ -33,9 +36,15 @@ export default function CardView(props) {
     try {
       const response = await fetch("http://localhost:8080/api/categories");
       const data = await response.json();
-      setTabData(data.result); // Lưu dữ liệu vào state
+      // Thêm tab "Tất cả danh mục" vào đầu mảng
+      const allCategoriesTab = {
+        id: "all",
+        name: "Tất cả danh mục",
+        thumnailUrl: "/images/all-categories.png",
+      };
+      setTabData([allCategoriesTab, ...data.result]);
     } catch (error) {
-      console.error("Error fetching tabs data: ", error);
+      console.error("Lỗi khi tải dữ liệu danh mục: ", error);
     }
   };
 
@@ -43,11 +52,15 @@ export default function CardView(props) {
   const fetchProperties = async (id) => {
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:8080/api/listings`);
+      let url = "http://localhost:8080/api/listings";
+      if (id !== "all") {
+        url += `?categoryId=${id}`;
+      }
+      const response = await fetch(url);
       const data = await response.json();
-      setProperties(data.result); // Lưu properties vào state
+      setProperties(data.result);
     } catch (error) {
-      console.error("Error fetching properties data: ", error);
+      console.error("Lỗi khi tải dữ liệu bất động sản: ", error);
     } finally {
       setLoading(false);
     }
@@ -58,13 +71,20 @@ export default function CardView(props) {
     fetchTabsData();
   }, []);
 
-  // Gọi fetchProperties khi tab thay đổi
+  // Gọi fetchProperties khi tab thay đổi và không đang trong trạng thái tìm kiếm
   useEffect(() => {
-    if (tabData.length > 0) {
+    if (tabData.length > 0 && !props.isSearching) {
       const currentTabData = tabData[props.value];
       fetchProperties(currentTabData.id);
     }
-  }, [props.value, tabData]);
+  }, [props.value, tabData, props.isSearching]);
+
+  // Cập nhật properties khi có kết quả tìm kiếm
+  useEffect(() => {
+    if (props.isSearching && props.searchResults) {
+      setProperties(props.searchResults);
+    }
+  }, [props.searchResults, props.isSearching]);
 
   return (
     <Box sx={{ width: "100%" }}>
@@ -76,21 +96,31 @@ export default function CardView(props) {
           scrollButtons="auto"
           allowScrollButtonsMobile
         >
-          {tabData.map((tab, index) => (
+          {tabData.map((tab) => (
             <Tab
               key={tab.id}
               label={tab.name}
               icon={
-                <img
-                  src={`http://localhost:8080${tab.thumnailUrl}`}  // Kết hợp đúng tiền tố URL
-                  alt={tab.name}
-                  style={{
-                    width: "30px",
-                    height: "30px",
-                    objectFit: "cover",
-                    marginRight: "15px",
-                  }}
-                />
+                tab.id === "all" ? (
+                  <CategoryIcon
+                    sx={{
+                      fontSize: 30,
+                      marginRight: "15px",
+                      color: "primary.main",
+                    }}
+                  />
+                ) : (
+                  <img
+                    src={`http://localhost:8080${tab.thumnailUrl}`}
+                    alt={tab.name}
+                    style={{
+                      width: "30px",
+                      height: "30px",
+                      objectFit: "cover",
+                      marginRight: "15px",
+                    }}
+                  />
+                )
               }
               style={{
                 fontWeight: "bold",
@@ -110,7 +140,7 @@ export default function CardView(props) {
       {tabData.map((tab, index) => (
         <CustomTabPanel value={props.value} index={index} key={tab.id}>
           {loading ? (
-            <div>Loading...</div>
+            <div>Đang tải...</div>
           ) : (
             <Properties properties={properties} />
           )}

@@ -7,11 +7,18 @@ import CardView from "./CardView";
 import { FaColumns, FaMap } from "react-icons/fa";
 import Map from "./Map";
 
-const Result = ({ properties }) => {
+const Result = ({
+  properties: defaultProperties,
+  searchResults,
+  isSearching,
+}) => {
   const [view, setView] = useState("card");
   const [tabValue, setTabValue] = useState(0);
   const [mapProperties, setMapProperties] = useState([]);
   const isDesktop = useResponsive("up", "md");
+
+  // Ưu tiên hiển thị searchResults nếu đang tìm kiếm
+  const properties = isSearching ? searchResults : defaultProperties || [];
 
   const handleChangeTab = (event, newValue) => {
     setTabValue(newValue);
@@ -47,8 +54,11 @@ const Result = ({ properties }) => {
               textAlign={{ xs: "center", md: "start" }}
               sx={{ fontWeight: 600 }}
             >
-              Tìm thấy {properties?.length || 0} kết quả dựa trên tìm kiếm của
-              bạn
+              {isSearching
+                ? `Tìm thấy ${
+                    searchResults?.length || 0
+                  } kết quả dựa trên tìm kiếm của bạn`
+                : `Hiển thị ${defaultProperties?.length || 0} phòng`}
             </Typography>
           </Grid>
           <Grid
@@ -60,9 +70,7 @@ const Result = ({ properties }) => {
           >
             <Stack direction="row" alignItems="center" spacing={2}>
               <Chip
-                onClick={() => {
-                  setView("map");
-                }}
+                onClick={() => setView("map")}
                 sx={{ p: 1 }}
                 color="primary"
                 variant={view === "map" ? "filled" : "outlined"}
@@ -70,9 +78,7 @@ const Result = ({ properties }) => {
                 icon={<FaMap size={20} weight="bold" />}
               />
               <Chip
-                onClick={() => {
-                  setView("card");
-                }}
+                onClick={() => setView("card")}
                 sx={{ p: 1 }}
                 color="primary"
                 variant={view === "card" ? "filled" : "outlined"}
@@ -88,7 +94,8 @@ const Result = ({ properties }) => {
           <Grid container spacing={2}>
             <Grid item md={6} xs={12}>
               <CardView
-                properties={properties}
+                searchResults={properties}
+                isSearching={isSearching}
                 view={view}
                 value={tabValue}
                 handleChangeTab={handleChangeTab}
@@ -101,7 +108,8 @@ const Result = ({ properties }) => {
         </Box>
       ) : (
         <CardView
-          properties={properties}
+          searchResults={properties}
+          isSearching={isSearching}
           view={view}
           value={tabValue}
           handleChangeTab={handleChangeTab}
@@ -118,17 +126,9 @@ const DEFAULT_CENTER = {
 };
 
 Result.propTypes = {
-  properties: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-      title: PropTypes.string,
-      name: PropTypes.string,
-      price: PropTypes.number,
-      address: PropTypes.string,
-      latitude: PropTypes.number,
-      longitude: PropTypes.number,
-    })
-  ),
+  properties: PropTypes.array,
+  searchResults: PropTypes.array,
+  isSearching: PropTypes.bool,
 };
 
 export default Result;

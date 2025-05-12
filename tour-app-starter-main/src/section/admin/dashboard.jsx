@@ -191,19 +191,26 @@ export default function AdminDashboard() {
     });
 
     const categoryChart = createChart(categoryChartRef.current, 'bar', {
-      labels: ['Villa', 'Căn hộ', 'Nhà gỗ', 'Tốt', 'Trung bình', 'Kém'],
+      labels: ['Villa', 'Căn hộ', 'Nhà gỗ', '5 sao', '4 sao', '3 sao', '2 sao', '1 sao'],
       datasets: [
         {
           label: 'Số lượng',
-          data: [45, 25, 30, 65, 25, 10],
+          data: [45, 25, 30, 20, 25, 30, 15, 10],
           backgroundColor: [
-            '#ffa726', '#ab47bc', '#29b6f6',
-            '#66bb6a', '#ffee58', '#ef5350'
+            '#ffa726', 
+            '#ab47bc', 
+            '#29b6f6', 
+            '#4caf50', 
+            '#8bc34a', 
+            '#ffeb3b', 
+            '#ff9800', 
+            '#f44336'  
           ],
           borderRadius: 5
         }
       ]
-    }, {
+    },
+     {
       plugins: {
         legend: { display: false },
         title: { 

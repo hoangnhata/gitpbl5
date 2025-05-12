@@ -1,11 +1,18 @@
 import { InputLabel, Slider, Stack, TextField } from "@mui/material";
-import { useState } from "react";
 
-const PriceRange = () => {
-  const [value, setValue] = useState([20, 75]);
+const PriceRange = ({ value, onChange, min = 0, max = 1000 }) => {
+  const handleSliderChange = (event, newValue) => {
+    onChange && onChange(newValue);
+  };
 
-  const handleChange = (event, newValue) => {
-    setValue(newValue);
+  const handleMinChange = (e) => {
+    const min = Number(e.target.value);
+    onChange && onChange([min, value[1]]);
+  };
+
+  const handleMaxChange = (e) => {
+    const max = Number(e.target.value);
+    onChange && onChange([value[0], max]);
   };
 
   return (
@@ -20,11 +27,11 @@ const PriceRange = () => {
       </InputLabel>
       <Slider
         value={value}
-        onChange={handleChange}
+        onChange={handleSliderChange}
         valueLabelDisplay="auto"
         valueLabelFormat={(value) => `${value}$`}
-        min={0}
-        max={100}
+        min={min}
+        max={max}
         step={1}
       />
       <Stack direction="row" alignItems="center" spacing={2}>
@@ -33,22 +40,16 @@ const PriceRange = () => {
           label="Tối thiểu"
           type="number"
           value={value[0]}
-          onChange={(e) => {
-            setValue((prev) => {
-              return [e.target.value, prev[1]];
-            });
-          }}
+          onChange={handleMinChange}
+          inputProps={{ min, max }}
         />
         <TextField
           size="small"
           label="Tối đa"
           type="number"
           value={value[1]}
-          onChange={(e) => {
-            setValue((prev) => {
-              return [prev[0], e.target.value];
-            });
-          }}
+          onChange={handleMaxChange}
+          inputProps={{ min, max }}
         />
       </Stack>
     </Stack>

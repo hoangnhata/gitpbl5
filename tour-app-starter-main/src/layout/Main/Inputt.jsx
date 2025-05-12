@@ -1,24 +1,9 @@
-import {
-  Box,
-  Card,
-  Divider,
-  Grid,
-  IconButton,
-  Stack,
-  TextField,
-  Typography,
-} from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search"; // Import the SearchIcon
-import useResponsive from "../../hooks/useResponsive";
+import { Box, Card, IconButton, TextField } from "@mui/material";
+import SearchIcon from "@mui/icons-material/Search";
 import { styled } from "@mui/material/styles";
-import LocationSearch from "./LocationSearch";
-import {
-  DateRangePicker,
-  MobileDateRangePicker,
-  SingleInputDateRangeField,
-} from "@mui/x-date-pickers-pro";
-import { useState } from "react";
-import dayjs from "dayjs";
+import { useState, useContext } from "react";
+import axios from "axios";
+import { SearchContext } from "../../contexts/SearchContext";
 
 const StyledIconButton = styled(IconButton)(({ theme }) => ({
   background: theme.palette.primary.main,
@@ -26,139 +11,80 @@ const StyledIconButton = styled(IconButton)(({ theme }) => ({
   "&:hover": {
     backgroundColor: theme.palette.primary.dark,
   },
-  padding: 10,
-  borderRadius: 20, // Make it round
+  height: 48,
+  width: 48,
+  borderRadius: "50%",
+  boxShadow: "0 2px 8px rgba(255,56,92,0.15)",
+  fontSize: 22,
+  marginLeft: 12,
+  transition: "background 0.2s",
 }));
 
-const shortcutItems = [
-  {
-    label: "Tuần này",
-    getValue: () => {
-      const today = dayjs();
-      return [today.startOf("week"), today.endOf("week")];
-    },
-  },
-  {
-    label: "7 ngày qua",
-    getValue: () => {
-      const today = dayjs();
-      return [today.subtract(7, "day"), today];
-    },
-  },
-  {
-    label: "Tháng hiện tại",
-    getValue: () => {
-      const today = dayjs();
-      return [today.startOf("month"), today.endOf("month")];
-    },
-  },
-  {
-    label: "Tháng sau",
-    getValue: () => {
-      const today = dayjs();
-      const startOfNextMonth = today.endOf("month").add(1, "day");
-      return [startOfNextMonth, startOfNextMonth.endOf("month")];
-    },
-  },
-  { label: "Đặt lại", getValue: () => [null, null] },
-];
-
 const Inputt = () => {
-  const isMobile = useResponsive("down", "md");
-  const [value, setValue] = useState([null, null]); // Default state for the date range
+  const { updateSearchResults } = useContext(SearchContext);
+  const [keyword, setKeyword] = useState("");
+
+  const handleSearch = async () => {
+    try {
+      let url = "http://localhost:8080/api/listings/search?";
+      const params = new URLSearchParams();
+      if (keyword) params.append("keyword", keyword);
+      const response = await axios.get(`${url}${params.toString()}`);
+      updateSearchResults(response.data.result, true);
+    } catch (error) {
+      console.error("Lỗi khi tìm kiếm:", error);
+      updateSearchResults([], false);
+    }
+  };
+
+  const handleKeyPress = (event) => {
+    if (event.key === "Enter") {
+      handleSearch();
+    }
+  };
 
   return (
-    <Box sx={{ px: { xs: 2, md: 0 } }}>
-      <Card sx={{ padding: 2, borderRadius: 3 }}>
-        {" "}
-        {/* Rounded corners for the card */}
-        <Stack
-          direction={isMobile ? "column" : "row"}
-          alignItems="center"
-          spacing={2}
-        >
-          <Box sx={{ width: isMobile ? "80vw" : 720 }}>
-            <Grid container spacing={2}>
-              <Grid item md={6} xs={12}>
-                <Stack spacing={{ xs: 1, md: 0 }} alignItems="center">
-                  <Typography variant="subtitle2" sx={{ fontWeight: "bold" }}>
-                    Điểm Đến
-                  </Typography>
-                  {/* Location search */}
-                  <LocationSearch />
-                </Stack>
-              </Grid>
-              <Grid item md={6} xs={12}>
-                <Stack
-                  direction="row"
-                  alignItems="center"
-                  justifyContent="center"
-                  spacing={0.2}
-                >
-                  <Divider orientation="vertical" sx={{ height: 40 }} />
-                  <Stack
-                    spacing={{ xs: 1, md: 0 }}
-                    sx={{ width: "100%" }}
-                    alignItems="center"
-                  >
-                    <Typography variant="subtitle2">
-                      Ngày Nhận-Trả Phòng
-                    </Typography>
-                    {isMobile ? (
-                      <MobileDateRangePicker
-                        value={value}
-                        onChange={(newValue) => {
-                          setValue(newValue);
-                        }}
-                        renderInput={(starProps, endProps) => (
-                          <>
-                            <TextField
-                              {...starProps}
-                              label=""
-                              sx={{ borderRadius: 10 }}
-                            />
-                            <TextField
-                              {...endProps}
-                              label=""
-                              sx={{ borderRadius: 10 }}
-                            />
-                          </>
-                        )}
-                      />
-                    ) : (
-                      <DateRangePicker
-                        slots={{
-                          field: SingleInputDateRangeField,
-                          textField: TextField,
-                        }}
-                        slotProps={{
-                          shortcuts: {
-                            items: shortcutItems,
-                          },
-                          textField: {
-                            fullWidth: true,
-                            variant: "standard",
-                            InputProps: {
-                              disableUnderline: true,
-                            },
-                          },
-                        }}
-                        sx={{ width: "100%" }}
-                        disablePast
-                        name="alowwedRange"
-                      />
-                    )}
-                  </Stack>
-                  <Divider orientation="vertical" sx={{ height: 40 }} />
-                </Stack>
-              </Grid>
-            </Grid>
-          </Box>
-
-          <StyledIconButton>
-            <SearchIcon />
-          </StyledIconButton>
-        </Stack>
+    <Box
+      sx={{ width: "50%", maxWidth: 1400, mx: "auto", mt: 0.5, maxHeight: 70 }}
+    >
+      <Card
+        sx={{
+          p: 1.5,
+          borderRadius: 8,
+          boxShadow: 3,
+          maxWidth: 1400,
+          width: "100%",
+          maxHeight: 880,
+          mx: "auto",
+          display: "flex",
+          alignItems: "center",
+          background: "rgba(24,24,24,0.95)",
+        }}
+      >
+        <TextField
+          variant="outlined"
+          fullWidth
+          placeholder="Tìm kiếm địa điểm, tên phòng, ..."
+          value={keyword}
+          onChange={(e) => setKeyword(e.target.value)}
+          onKeyPress={handleKeyPress}
+          InputProps={{
+            sx: {
+              borderRadius: 8,
+              background: "#181818",
+              color: "#fff",
+              fontWeight: 500,
+              fontSize: 18,
+              maxHeight: 50,
+              px: 2,
+              boxShadow: "0 2px 8px rgba(255,56,92,0.08)",
+              height: 56,
+            },
+          }}
+        />
+        <StyledIconButton onClick={handleSearch}>
+          <SearchIcon />
+        </StyledIconButton>
       </Card>
     </Box>
   );

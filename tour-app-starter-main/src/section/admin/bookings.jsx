@@ -42,8 +42,8 @@ import {
 const initialBookings = [
   {
     id: 1,
-    guestName: 'Nguyễn Văn A',
-    email: 'nguyenvana@gmail.com',
+    guestName: 'Hoàng Minh Nhật',
+    email: 'nhat@gmail.com',
     phone: '0123456789',
     propertyName: 'Biệt thự biển sang trọng',
     checkIn: '2024-03-15',
@@ -55,8 +55,8 @@ const initialBookings = [
   },
   {
     id: 2,
-    guestName: 'Trần Thị B',
-    email: 'tranthib@gmail.com',
+    guestName: 'Lê Minh Khánh',
+    email: 'khanh@gmail.com',
     phone: '0987654321',
     propertyName: 'Căn hộ cao cấp view biển',
     checkIn: '2024-03-18',
@@ -68,8 +68,8 @@ const initialBookings = [
   },
   {
     id: 3,
-    guestName: 'Lê Văn C',
-    email: 'levanc@gmail.com',
+    guestName: 'Trần Phước Phú',
+    email: 'phu@gmail.com',
     phone: '0369852147',
     propertyName: 'Nhà phố hiện đại',
     checkIn: '2024-03-20',
@@ -79,19 +79,7 @@ const initialBookings = [
     paymentStatus: 'refunded',
     createdAt: '2024-03-12'
   },
-  {
-    id: 4,
-    guestName: 'Phạm Thị D',
-    email: 'phamthid@gmail.com',
-    phone: '0852147963',
-    propertyName: 'Căn hộ studio',
-    checkIn: '2024-03-22',
-    checkOut: '2024-03-24',
-    totalPrice: '2,000,000',
-    status: 'pending',
-    paymentStatus: 'pending',
-    createdAt: '2024-03-13'
-  }
+  
 ];
 
 export default function AdminBookings() {

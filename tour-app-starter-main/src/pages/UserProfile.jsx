@@ -474,14 +474,16 @@ const UserProfile = () => {
                     "&:hover": { background: "#232323" },
                     cursor: "pointer",
                   }}
-                  onClick={() => navigate(`/property/${room.id}`)}
+                  onClick={() => navigate(`/property/${room.listingId}`)}
                 >
                   <TableCell>
                     <Avatar
                       variant="rounded"
                       src={
-                        room.primaryThumnail
-                          ? `http://localhost:8080/${room.primaryThumnail}`
+                        room.primaryUrl
+                          ? room.primaryUrl.startsWith("http")
+                            ? room.primaryUrl
+                            : `http://localhost:8080/${room.primaryUrl}`
                           : "/default-room.jpg"
                       }
                       alt={room.title}
@@ -595,8 +597,10 @@ const UserProfile = () => {
                     <Avatar
                       variant="rounded"
                       src={
-                        room.primaryThumnail
-                          ? `http://localhost:8080/${room.primaryThumnail}`
+                        room.primaryUrl
+                          ? room.primaryUrl.startsWith("http")
+                            ? room.primaryUrl
+                            : `http://localhost:8080/${room.primaryUrl}`
                           : "/default-room.jpg"
                       }
                       alt={room.title}
