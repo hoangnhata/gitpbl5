@@ -30,12 +30,12 @@ export const useFilter = () => {
             const searchParams = new URLSearchParams();
             Object.keys(params).forEach((key) => {
               if (Array.isArray(params[key])) {
+                // Đảm bảo mỗi ID được gửi dưới dạng số
                 params[key].forEach((val) => searchParams.append(key, val));
               } else {
                 searchParams.append(key, params[key]);
               }
             });
-            console.log("URLSearchParams:", searchParams.toString());
             return searchParams.toString();
           },
         }
@@ -45,6 +45,7 @@ export const useFilter = () => {
       console.log("Request Params:", response.config.params);
       updateSearchResults(response.data.result, true);
     } catch (error) {
+      console.error("Filter error:", error);
       updateSearchResults([], false);
     }
   };

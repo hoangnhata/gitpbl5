@@ -12,9 +12,7 @@ import {
   CircularProgress,
   Tabs,
   Tab,
-  Grid,
   Paper,
-  IconButton,
   Badge,
 } from "@mui/material";
 import {
@@ -22,7 +20,6 @@ import {
   Favorite as FavoriteIcon,
   Message as MessageIcon,
   Hotel as HotelIcon,
-  AdminPanelSettings as AdminPanelSettingsIcon,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../api/axiosConfig";
@@ -59,17 +56,6 @@ const UserProfile = () => {
     newPassword: "",
     confirmPassword: "",
   });
-  const [hostRequestData, setHostRequestData] = useState({
-    fullname: "",
-    description: "",
-    languages: "",
-    address: "",
-    experience: "",
-    avatar: null,
-  });
-  const [hostRequestPreview, setHostRequestPreview] = useState("");
-  const [hostRequestSuccess, setHostRequestSuccess] = useState(false);
-  const [hostRequestError, setHostRequestError] = useState("");
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -83,11 +69,6 @@ const UserProfile = () => {
             phone: userData.phone || "",
             thumnailUrl: userData.thumnailUrl || "",
           });
-          setHostRequestData((prev) => ({
-            ...prev,
-            fullname: userData.fullname || "",
-          }));
-          setHostRequestPreview(userData.thumnailUrl || "");
         }
       } catch (err) {
         console.error("Error fetching user data:", err);
@@ -240,48 +221,6 @@ const UserProfile = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleHostRequestChange = (e) => {
-    const { name, value } = e.target;
-    setHostRequestData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleHostRequestFile = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setHostRequestData((prev) => ({ ...prev, avatar: file }));
-      setHostRequestPreview(URL.createObjectURL(file));
-    }
-  };
-
-  const handleHostRequestSubmit = (e) => {
-    e.preventDefault();
-    setHostRequestError("");
-    // Validate
-    if (
-      !hostRequestData.fullname ||
-      !hostRequestData.description ||
-      !hostRequestData.languages ||
-      !hostRequestData.address ||
-      !hostRequestData.experience
-    ) {
-      setHostRequestError("Vui lòng điền đầy đủ thông tin.");
-      return;
-    }
-    // Log dữ liệu ra console (có thể thay bằng gọi API)
-    console.log("Host Request:", hostRequestData);
-    setHostRequestSuccess(true);
-    setTimeout(() => setHostRequestSuccess(false), 3000);
-    setHostRequestData({
-      fullname: "",
-      description: "",
-      languages: "",
-      address: "",
-      experience: "",
-      avatar: null,
-    });
-    setHostRequestPreview("");
   };
 
   const renderEditProfile = () => (
@@ -650,17 +589,13 @@ const UserProfile = () => {
                     "&:hover": { background: "#232323" },
                     cursor: "pointer",
                   }}
-                  onClick={() => navigate(`/property/${room.listingId}`)}
+                  onClick={() => navigate(`/property/${room.id}`)}
                 >
                   <TableCell>
                     <Avatar
                       variant="rounded"
                       src={
-                        room.primaryThumnail
-                          ? room.primaryThumnail.startsWith("http")
-                            ? room.primaryThumnail
-                            : `http://localhost:8080/${room.primaryThumnail}`
-                          : room.primaryUrl
+                        room.primaryUrl
                           ? room.primaryUrl.startsWith("http")
                             ? room.primaryUrl
                             : `http://localhost:8080/${room.primaryUrl}`
@@ -739,107 +674,6 @@ const UserProfile = () => {
       )}
     </Card>
   );
-
-  const renderHostRequest = () => (
-    <Card sx={{ p: 3 }}>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: 700 }}>
-        Yêu cầu lên host
-      </Typography>
-      {hostRequestError && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {hostRequestError}
-        </Alert>
-      )}
-      {hostRequestSuccess && (
-        <Alert severity="success" sx={{ mb: 2 }}>
-          Gửi yêu cầu thành công!
-        </Alert>
-      )}
-      <form onSubmit={handleHostRequestSubmit}>
-        <Stack spacing={3}>
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              mb: 2,
-            }}
-          >
-            <Avatar
-              alt={hostRequestData.fullname || "Avatar"}
-              src={hostRequestPreview || "/default-avatar.png"}
-              sx={{ width: 100, height: 100, mb: 1 }}
-            />
-            <Button variant="outlined" component="label" sx={{ mb: 1 }}>
-              Chọn ảnh đại diện
-              <input
-                type="file"
-                accept="image/*"
-                hidden
-                onChange={handleHostRequestFile}
-              />
-            </Button>
-            {hostRequestData.avatar && (
-              <Typography variant="caption" color="text.secondary">
-                {hostRequestData.avatar.name}
-              </Typography>
-            )}
-          </Box>
-          <TextField
-            fullWidth
-            name="fullname"
-            label="Họ và tên"
-            value={hostRequestData.fullname}
-            onChange={handleHostRequestChange}
-          />
-          <TextField
-            fullWidth
-            name="description"
-            label="Mô tả bản thân / Đội nhóm"
-            value={hostRequestData.description}
-            onChange={handleHostRequestChange}
-            multiline
-            minRows={3}
-          />
-          <TextField
-            fullWidth
-            name="languages"
-            label="Ngôn ngữ sử dụng (VD: Tiếng Việt, English, ... )"
-            value={hostRequestData.languages}
-            onChange={handleHostRequestChange}
-          />
-          <TextField
-            fullWidth
-            name="address"
-            label="Địa chỉ (Thành phố, Quốc gia)"
-            value={hostRequestData.address}
-            onChange={handleHostRequestChange}
-          />
-          <TextField
-            fullWidth
-            name="experience"
-            label="Kinh nghiệm (VD: 8 năm Host, 24 năm ngành khách sạn, ... )"
-            value={hostRequestData.experience}
-            onChange={handleHostRequestChange}
-          />
-          <Button
-            fullWidth
-            size="large"
-            type="submit"
-            variant="contained"
-            sx={{
-              bgcolor: "primary.main",
-              color: "white",
-              "&:hover": { bgcolor: "primary.dark" },
-            }}
-          >
-            Gửi yêu cầu
-          </Button>
-        </Stack>
-      </form>
-    </Card>
-  );
-
   return (
     <Container maxWidth="lg">
       <Box
@@ -886,11 +720,6 @@ const UserProfile = () => {
               label="Tin nhắn"
               iconPosition="start"
             />
-            <Tab
-              icon={<AdminPanelSettingsIcon />}
-              label="Yêu cầu lên host"
-              iconPosition="start"
-            />
           </Tabs>
         </Box>
 
@@ -898,7 +727,6 @@ const UserProfile = () => {
         {currentTab === 1 && renderBookedRooms()}
         {currentTab === 2 && renderFavoriteRooms()}
         {currentTab === 3 && renderMessages()}
-        {currentTab === 4 && renderHostRequest()}
       </Box>
     </Container>
   );

@@ -55,9 +55,11 @@ import {
   EmojiEmotions as EmojiIcon,
   Home as HomeIcon,
   Hotel as HotelIcon,
+  AdminPanelSettings as AdminPanelSettingsIcon,
 } from "@mui/icons-material";
 import PropTypes from "prop-types";
 import axiosInstance from "../api/axiosConfig";
+import HostInfo from "../section/Property/components/HostInfo";
 
 // Mock data for demonstration
 const mockProperties = [
@@ -218,6 +220,21 @@ export default function HostPage() {
     images: [],
     amenites: [],
   });
+
+  // Thêm state cho host
+  const [host, setHost] = useState({
+    name: "Prateek",
+    reviews: 473,
+    rating: 4.26,
+    yearsHosting: 8,
+    languages: ["English", "French", "Hindi"],
+    location: "Jaipur, India",
+    description:
+      "Hi All! I am Prateek Jain C/O Le Pensions Stays & Enterprises Pvt Ltd. By qualification, I am a chartered Accountant from The Institute of Chartered Accountants of India. But at heart, I have always been an entrepreneur. Our team has a collective experience of more than 24 years in hospitality and we love what we do. Le Pension Stays is a brand that stands for comfort, safety, and a memorable experience.",
+    avatar: "https://ui-avatars.com/api/?name=Prateek&background=random",
+  });
+  const [hostEdit, setHostEdit] = useState(host);
+  const [hostAvatarPreview, setHostAvatarPreview] = useState(host.avatar);
 
   useEffect(() => {
     axiosInstance.get("/api/countries").then((res) => {
@@ -549,13 +566,117 @@ export default function HostPage() {
         {/* Main Content */}
         <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
           <Tabs value={tabValue} onChange={handleTabChange}>
+            <Tab
+              icon={<AdminPanelSettingsIcon />}
+              label="Thông tin Host"
+              iconPosition="start"
+            />
             <Tab icon={<HomeIcon />} label="Tài sản" iconPosition="start" />
             <Tab icon={<MessageIcon />} label="Tin nhắn" iconPosition="start" />
             <Tab icon={<HotelIcon />} label="Đặt phòng" iconPosition="start" />
           </Tabs>
         </Box>
 
+        {/* Tab Thông tin Host */}
         <TabPanel value={tabValue} index={0}>
+          <Box sx={{ maxWidth: 700, mx: "auto" }}>
+            <HostInfo host={host} />
+            <Card sx={{ p: 3, mt: 3 }}>
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
+                Chỉnh sửa thông tin Host
+              </Typography>
+              <Box
+                component="form"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  setHost({ ...hostEdit, avatar: hostAvatarPreview });
+                }}
+                sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+              >
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <Avatar
+                    src={hostAvatarPreview}
+                    alt={hostEdit.name}
+                    sx={{ width: 80, height: 80 }}
+                  />
+                  <Button variant="outlined" component="label">
+                    Chọn ảnh đại diện
+                    <input
+                      type="file"
+                      accept="image/*"
+                      hidden
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          setHostAvatarPreview(URL.createObjectURL(file));
+                        }
+                      }}
+                    />
+                  </Button>
+                </Stack>
+                <TextField
+                  label="Tên Host"
+                  value={hostEdit.name}
+                  onChange={(e) =>
+                    setHostEdit({ ...hostEdit, name: e.target.value })
+                  }
+                  fullWidth
+                />
+                <TextField
+                  label="Địa chỉ (Lives in)"
+                  value={hostEdit.location}
+                  onChange={(e) =>
+                    setHostEdit({ ...hostEdit, location: e.target.value })
+                  }
+                  fullWidth
+                />
+                <TextField
+                  label="Ngôn ngữ (phân cách bởi dấu phẩy)"
+                  value={hostEdit.languages.join(", ")}
+                  onChange={(e) =>
+                    setHostEdit({
+                      ...hostEdit,
+                      languages: e.target.value.split(",").map((s) => s.trim()),
+                    })
+                  }
+                  fullWidth
+                />
+                <TextField
+                  label="Số năm làm Host"
+                  type="number"
+                  value={hostEdit.yearsHosting}
+                  onChange={(e) =>
+                    setHostEdit({
+                      ...hostEdit,
+                      yearsHosting: Number(e.target.value),
+                    })
+                  }
+                  fullWidth
+                />
+                <TextField
+                  label="Mô tả bản thân"
+                  value={hostEdit.description}
+                  onChange={(e) =>
+                    setHostEdit({ ...hostEdit, description: e.target.value })
+                  }
+                  fullWidth
+                  multiline
+                  minRows={3}
+                />
+                <Button
+                  type="submit"
+                  variant="contained"
+                  sx={{ mt: 2, alignSelf: "flex-end" }}
+                >
+                  Lưu thay đổi
+                </Button>
+              </Box>
+            </Card>
+          </Box>
+        </TabPanel>
+
+        {/* Tab Tài sản */}
+        <TabPanel value={tabValue} index={1}>
           <Grid container spacing={3}>
             {sortedProperties.map((property) => (
               <Grid item xs={12} md={6} key={property.id}>
@@ -666,7 +787,8 @@ export default function HostPage() {
           </Grid>
         </TabPanel>
 
-        <TabPanel value={tabValue} index={1}>
+        {/* Tab Tin nhắn */}
+        <TabPanel value={tabValue} index={2}>
           <Grid container spacing={2}>
             {/* Chat List */}
             <Grid item xs={12} md={4}>
@@ -889,7 +1011,8 @@ export default function HostPage() {
           </Grid>
         </TabPanel>
 
-        <TabPanel value={tabValue} index={2}>
+        {/* Tab Đặt phòng */}
+        <TabPanel value={tabValue} index={3}>
           <Typography>
             Tính năng quản lý đặt phòng sẽ được triển khai ở đây
           </Typography>

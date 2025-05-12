@@ -55,19 +55,14 @@ const Filter = () => {
       newState.highestPrice = priceRange.max;
     setFilterState(newState);
 
-    // Xử lý amenities: chỉ lấy key có value true
-    const amenitiesArr = Array.isArray(newState.amenities)
-      ? newState.amenities
-      : Object.keys(newState.amenities || {}).filter(
-          (k) => newState.amenities[k]
-        );
-
     // Tạo object filter sạch, chỉ truyền trường có giá trị thực sự
     const filterObj = {
       lowestPrice: newState.lowestPrice,
       highestPrice: newState.highestPrice,
     };
-    if (newState.amenities.length > 0) filterObj.amenities = newState.amenities;
+    if (newState.amenities && newState.amenities.length > 0) {
+      filterObj.amenities = newState.amenities;
+    }
     if (newState.country && newState.country.trim() !== "")
       filterObj.country = newState.country;
     if (newState.startDate && newState.startDate.trim() !== "")

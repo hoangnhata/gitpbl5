@@ -29,12 +29,12 @@ const Amenities = ({ value = [], onChange, showIcon }) => {
   }, [value]);
 
   // Xử lý khi chọn/bỏ chọn
-  const handleChange = (name) => {
+  const handleChange = (id) => {
     let newSelected;
-    if (selected.includes(name)) {
-      newSelected = selected.filter((item) => item !== name);
+    if (selected.includes(id)) {
+      newSelected = selected.filter((item) => item !== id);
     } else {
-      newSelected = [...selected, name];
+      newSelected = [...selected, id];
     }
     setSelected(newSelected);
     onChange && onChange(newSelected);
@@ -73,8 +73,8 @@ const Amenities = ({ value = [], onChange, showIcon }) => {
                 {amenity.name}
               </Typography>
               <Checkbox
-                checked={selected.includes(amenity.name)}
-                onChange={() => handleChange(amenity.name)}
+                checked={selected.includes(amenity.id)}
+                onChange={() => handleChange(amenity.id)}
                 color="primary"
               />
             </Box>

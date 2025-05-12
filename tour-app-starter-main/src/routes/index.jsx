@@ -33,7 +33,14 @@ export default function Router() {
         {
           element: (
             <ProtectedRoute requiredRole="profile">
-              <UserProfilePage />
+              {(() => {
+                const roles =
+                  JSON.parse(localStorage.getItem("user") || "{}")?.roles || [];
+                if (roles.includes("HOST") || roles.includes("ADMIN")) {
+                  return <HostAdminProfilePage />;
+                }
+                return <UserProfilePage />;
+              })()}
             </ProtectedRoute>
           ),
           path: "profile",
@@ -80,3 +87,6 @@ const ReservationPage = Loadable(
 const UserProfilePage = Loadable(lazy(() => import("../pages/UserProfile")));
 const HostPage = Loadable(lazy(() => import("../pages/Host")));
 const AdminPage = Loadable(lazy(() => import("../pages/Admin")));
+const HostAdminProfilePage = Loadable(
+  lazy(() => import("../pages/HostAdminProfile"))
+);
