@@ -54,7 +54,6 @@ import {
   AttachFile as AttachFileIcon,
   EmojiEmotions as EmojiIcon,
   Home as HomeIcon,
-  Hotel as HotelIcon,
   AdminPanelSettings as AdminPanelSettingsIcon,
 } from "@mui/icons-material";
 import PropTypes from "prop-types";
@@ -573,7 +572,6 @@ export default function HostPage() {
             />
             <Tab icon={<HomeIcon />} label="Tài sản" iconPosition="start" />
             <Tab icon={<MessageIcon />} label="Tin nhắn" iconPosition="start" />
-            <Tab icon={<HotelIcon />} label="Đặt phòng" iconPosition="start" />
           </Tabs>
         </Box>
 
@@ -1009,13 +1007,6 @@ export default function HostPage() {
               </Paper>
             </Grid>
           </Grid>
-        </TabPanel>
-
-        {/* Tab Đặt phòng */}
-        <TabPanel value={tabValue} index={3}>
-          <Typography>
-            Tính năng quản lý đặt phòng sẽ được triển khai ở đây
-          </Typography>
         </TabPanel>
       </Box>
 

@@ -103,6 +103,7 @@ const UserProfile = () => {
       const res = await axiosInstance.get("/api/users/favorites");
       if (res.data?.result?.favorites) {
         setFavoriteRooms(res.data.result.favorites);
+        console.log("favoriteRooms", res.data.result.favorites);
       }
     } catch (err) {
       console.error("Error fetching favorites:", err);
@@ -255,9 +256,30 @@ const UserProfile = () => {
     }
   };
 
-  const handleHostRequestSubmit = (e) => {
+  const applyHostRequest = async ({
+    country,
+    language,
+    didHostYear,
+    description,
+  }) => {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user || !user.id)
+      throw new Error("Không tìm thấy thông tin người dùng");
+    const payload = {
+      userId: user.id,
+      country,
+      language,
+      didHostYear,
+      description,
+    };
+    return axiosInstance.post("/api/users/host/apply", payload);
+  };
+
+  const handleHostRequestSubmit = async (e) => {
     e.preventDefault();
     setHostRequestError("");
+    setHostRequestSuccess(false);
+
     // Validate
     if (
       !hostRequestData.fullname ||
@@ -269,19 +291,32 @@ const UserProfile = () => {
       setHostRequestError("Vui lòng điền đầy đủ thông tin.");
       return;
     }
-    // Log dữ liệu ra console (có thể thay bằng gọi API)
-    console.log("Host Request:", hostRequestData);
-    setHostRequestSuccess(true);
-    setTimeout(() => setHostRequestSuccess(false), 3000);
-    setHostRequestData({
-      fullname: "",
-      description: "",
-      languages: "",
-      address: "",
-      experience: "",
-      avatar: null,
-    });
-    setHostRequestPreview("");
+
+    try {
+      // Gọi API apply host
+      const res = await applyHostRequest({
+        country: hostRequestData.address,
+        language: hostRequestData.languages,
+        didHostYear: hostRequestData.experience,
+        description: hostRequestData.description,
+      });
+      console.log("Kết quả trả về từ API apply host:", res.data);
+      setHostRequestSuccess(true);
+      setTimeout(() => setHostRequestSuccess(false), 3000);
+      setHostRequestData({
+        fullname: "",
+        description: "",
+        languages: "",
+        address: "",
+        experience: "",
+        avatar: null,
+      });
+      setHostRequestPreview("");
+    } catch (err) {
+      setHostRequestError(
+        err.response?.data?.message || "Gửi yêu cầu thất bại, vui lòng thử lại."
+      );
+    }
   };
 
   const renderEditProfile = () => (
@@ -650,7 +685,7 @@ const UserProfile = () => {
                     "&:hover": { background: "#232323" },
                     cursor: "pointer",
                   }}
-                  onClick={() => navigate(`/property/${room.listingId}`)}
+                  onClick={() => navigate(`/property/${room.id}`)}
                 >
                   <TableCell>
                     <Avatar
@@ -660,10 +695,6 @@ const UserProfile = () => {
                           ? room.primaryThumnail.startsWith("http")
                             ? room.primaryThumnail
                             : `http://localhost:8080/${room.primaryThumnail}`
-                          : room.primaryUrl
-                          ? room.primaryUrl.startsWith("http")
-                            ? room.primaryUrl
-                            : `http://localhost:8080/${room.primaryUrl}`
                           : "/default-room.jpg"
                       }
                       alt={room.title}
