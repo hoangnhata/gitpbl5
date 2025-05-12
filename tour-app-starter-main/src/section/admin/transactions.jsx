@@ -165,7 +165,7 @@ export default function AdminTransactions() {
     try {
       setLoading(true);
       
-      await new Promise(resolve => setTimeout(resolve, 1000));
+
       
       setTransactions(prev => 
         prev.map(txn => 
@@ -195,7 +195,7 @@ export default function AdminTransactions() {
   const handleRefund = async () => {
     try {
       setLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+
       
       setTransactions(prev => 
         prev.map(txn => 

@@ -25,7 +25,8 @@ import {
   Grid,
   Alert,
   IconButton,
-  Tooltip
+  Tooltip,
+  Avatar
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -38,35 +39,41 @@ const mockUsers = [
   {
     id: 1,
     name: 'Hoàng Minh Nhật',
+    username: 'nhat123',
     email: 'nhat@gmail.com',
     role: 'Khách thuê',
     status: 'Hoạt động',
     phone: '0123456789',
     address: 'Hà Nội',
     createdAt: '2024-01-01',
-    lastLogin: '2024-03-20'
+    lastLogin: '2024-03-20',
+    avatar: 'https://i.pinimg.com/736x/1b/5b/d7/1b5bd7880cacfbc0a775f48e47633003.jpg'
   },
   {
     id: 2,
     name: 'Lê Minh Khánh',
+    username: 'khanh456',
     email: 'khanh@gmail.com',
     role: 'Chủ cho thuê',
     status: 'Bị khóa',
     phone: '0987654321',
     address: 'TP.HCM',
     createdAt: '2024-01-15',
-    lastLogin: '2024-03-19'
+    lastLogin: '2024-03-19',
+    avatar: 'https://i.pinimg.com/736x/1b/5b/d7/1b5bd7880cacfbc0a775f48e47633003.jpg'
   },
   {
     id: 3,
     name: 'Trần Phước Phú',
+    username: 'phu789',
     email: 'c@gmail.com',
     role: 'Khách thuê',
     status: 'Hoạt động',
     phone: '0123456789',
     address: 'Đà Nẵng',
     createdAt: '2024-02-01',
-    lastLogin: '2024-03-18'
+    lastLogin: '2024-03-18',
+    avatar: 'https://i.pinimg.com/736x/1b/5b/d7/1b5bd7880cacfbc0a775f48e47633003.jpg'
   }
 ];
 
@@ -174,6 +181,7 @@ export default function AdminUsers() {
         <Table>
           <TableHead>
             <TableRow>
+              <TableCell><strong>Ảnh đại diện</strong></TableCell>
               <TableCell><strong>Họ tên</strong></TableCell>
               <TableCell><strong>Email</strong></TableCell>
               <TableCell><strong>Loại tài khoản</strong></TableCell>
@@ -184,6 +192,13 @@ export default function AdminUsers() {
           <TableBody>
             {filteredUsers.map((user) => (
               <TableRow key={user.id}>
+                <TableCell>
+                  <Avatar
+                    src={user.avatar}
+                    alt={user.name}
+                    sx={{ width: 56, height: 56 }}
+                  />
+                </TableCell>
                 <TableCell>{user.name}</TableCell>
                 <TableCell>{user.email}</TableCell>
                 <TableCell>{user.role}</TableCell>
@@ -237,6 +252,39 @@ export default function AdminUsers() {
         </DialogTitle>
         <DialogContent>
           <Grid container spacing={3} sx={{ mt: 1 }}>
+            <Grid item xs={12} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
+              <Avatar
+                src={editedUser?.avatar}
+                alt={editedUser?.name}
+                sx={{ width: 120, height: 120, mb: 2 }}
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={editedUser?.status === 'Hoạt động'}
+                    onChange={handleStatusChange}
+                    disabled={!editMode}
+                  />
+                }
+                label={
+                  <Typography 
+                    color={editedUser?.status === 'Hoạt động' ? 'success.main' : 'error.main'}
+                    fontWeight={500}
+                  >
+                    {editedUser?.status === 'Hoạt động' ? 'Đang hoạt động' : 'Đã khóa'}
+                  </Typography>
+                }
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Tên đăng nhập"
+                name="username"
+                value={editedUser?.username || ''}
+                disabled
+              />
+            </Grid>
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
@@ -290,18 +338,6 @@ export default function AdminUsers() {
                   <MenuItem value="Chủ cho thuê">Chủ cho thuê</MenuItem>
                 </Select>
               </FormControl>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={editedUser?.status === 'Hoạt động'}
-                    onChange={handleStatusChange}
-                    disabled={!editMode}
-                  />
-                }
-                label="Trạng thái tài khoản"
-              />
             </Grid>
             <Grid item xs={12} md={6}>
               <TextField

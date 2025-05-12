@@ -93,7 +93,7 @@ export default function AdminCountries() {
   });
   const [errorAlert, setErrorAlert] = useState('');
 
-  // Hàm lấy danh sách quốc gia từ API /api/countries/detail
+
   const fetchCountries = async () => {
     try {
       const res = await axiosInstance.get('/api/countries/detail');
@@ -158,26 +158,45 @@ export default function AdminCountries() {
 
   const handleSubmit = async () => {
     if (selectedCountry) {
-      const updatedCountries = countries.map(country =>
-        country.id === selectedCountry.id ? { ...country, ...formData } : country
-      );
-      setCountries(updatedCountries);
-      setShowSuccessAlert(true);
-      handleCloseDialog();
+      try {
+        const form = new FormData();
+        form.append('id', selectedCountry.id);
+        form.append('name', formData.name);
+        form.append('description', formData.description);
+        form.append('isActive', formData.isActive);
+   
+        if (formData.image && formData.image.startsWith('data:')) {
+          const arr = formData.image.split(',');
+          const mime = arr[0].match(/:(.*?);/)[1];
+          const bstr = atob(arr[1]);
+          let n = bstr.length;
+          const u8arr = new Uint8Array(n);
+          while (n--) {
+            u8arr[n] = bstr.charCodeAt(n);
+          }
+          const file = new File([u8arr], 'thumbnail.png', { type: mime });
+          form.append('thumbnail', file);
+        }
+        const res = await axiosInstance.put('/api/countries', form, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        await fetchCountries();
+        setShowSuccessAlert(true);
+        handleCloseDialog();
+      } catch (error) {
+        setErrorAlert('Cập nhật quốc gia thất bại!');
+      }
     } else {
       try {
         let res;
         if (formData.image) {
-          // Nếu có ảnh, gửi dạng multipart/form-data
           const form = new FormData();
           form.append('name', formData.name);
           form.append('description', formData.description);
           form.append('isActive', formData.isActive);
-          // Chuyển base64 về file nếu cần, ở đây giả sử formData.image là base64
-          // Nếu formData.image là file, chỉ cần append trực tiếp
-          // Nếu là base64, cần convert về file
+
           if (formData.image.startsWith('data:')) {
-            // Convert base64 to Blob
+
             const arr = formData.image.split(',');
             const mime = arr[0].match(/:(.*?);/)[1];
             const bstr = atob(arr[1]);
@@ -194,7 +213,7 @@ export default function AdminCountries() {
             headers: { 'Content-Type': 'multipart/form-data' }
           });
         } else {
-          // Nếu không có ảnh, gửi JSON bình thường
+  
           const payload = {
             name: formData.name,
             description: formData.description,
@@ -202,7 +221,7 @@ export default function AdminCountries() {
           };
           res = await axiosInstance.post('/api/countries', payload);
         }
-        // Sau khi thêm mới, đồng bộ lại danh sách từ API detail
+    
         await fetchCountries();
         setShowSuccessAlert(true);
         handleCloseDialog();
@@ -212,11 +231,15 @@ export default function AdminCountries() {
     }
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa quốc gia này?')) {
-      const updatedCountries = countries.filter(country => country.id !== id);
-      setCountries(updatedCountries);
-      setShowSuccessAlert(true);
+      try {
+        await axiosInstance.delete(`/api/countries/${id}`);
+        await fetchCountries();
+        setShowSuccessAlert(true);
+      } catch (error) {
+        setErrorAlert('Xóa quốc gia thất bại!');
+      }
     }
   };
 
@@ -521,6 +544,9 @@ export default function AdminCountries() {
         </Box>
       </Dialog>
 
+
+      
+
       {showSuccessAlert && (
         <Alert
           severity="success"
@@ -533,7 +559,7 @@ export default function AdminCountries() {
             boxShadow: 3
           }}
         >
-          {selectedCountry ? 'Cập nhật quốc gia thành công!' : 'Thêm quốc gia mới thành công!'}
+          {'Lưu thông tin quốc gia thành công!'}
         </Alert>
       )}
 
