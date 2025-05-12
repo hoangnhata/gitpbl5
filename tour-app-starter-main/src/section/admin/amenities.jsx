@@ -155,7 +155,7 @@ export default function AdminAmenities() {
   const handleSaveIcon = async () => {
     try {
       setLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+    
 
       setAmenities(prev =>
         prev.map(amenity =>

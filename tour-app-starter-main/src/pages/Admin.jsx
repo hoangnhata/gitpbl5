@@ -17,6 +17,7 @@ import {
   MenuItem,
   Divider,
   Alert,
+  
 } from "@mui/material";
 import {
   Notifications as NotificationsIcon,
@@ -34,12 +35,14 @@ import {
   Category as CategoryIcon,
   BookOnline as BookOnlineIcon,
   Public as PublicIcon,
+  HowToReg as RequestPageIcon,
 } from "@mui/icons-material";
 import PropTypes from "prop-types";
 import axiosInstance from "../api/axiosConfig";
 
 import AdminDashboard from "../section/admin/dashboard";
 import AdminUsers from "../section/admin/users";
+import AdminHostRequest from "../section/admin/hostRequest";
 import AdminProperties from "../section/admin/properties";
 import AdminTransactions from "../section/admin/transactions";
 import AdminReports from "../section/admin/reports";
@@ -49,6 +52,7 @@ import AdminAmenities from "../section/admin/amenities";
 import AdminCategories from "../section/admin/categories";
 import AdminBookings from "../section/admin/bookings";
 import AdminCountries from "../section/admin/countries";
+
 
 function TabPanel({ children, value, index }) {
   return value === index ? <Box>{children}</Box> : null;
@@ -164,6 +168,7 @@ export default function AdminPage() {
   const tabIcons = [
     <DashboardIcon />, 
     <PeopleIcon />,
+    <RequestPageIcon />,
     <HomeIcon />, 
     <ReceiptIcon />,
     <ReportIcon />,
@@ -173,6 +178,7 @@ export default function AdminPage() {
     <CategoryIcon />, 
     <BookOnlineIcon />,
     <PublicIcon />,
+    
   ];
 
   return (
@@ -259,15 +265,17 @@ export default function AdminPage() {
           >
             <Tab icon={tabIcons[0]} label="Tổng quan" />
             <Tab icon={tabIcons[1]} label="Người dùng" />
-            <Tab icon={tabIcons[2]} label="Chỗ ở" />
-            <Tab icon={tabIcons[3]} label="Giao dịch" />
-            <Tab icon={tabIcons[4]} label="Báo cáo" />
-            <Tab icon={tabIcons[5]} label="Hỗ trợ" />
-            <Tab icon={tabIcons[6]} label="Hệ thống" />
-            <Tab icon={tabIcons[7]} label="Tiện ích" />
-            <Tab icon={tabIcons[8]} label="Danh mục" />
-            <Tab icon={tabIcons[9]} label="Đơn đặt phòng" />
-            <Tab icon={tabIcons[10]} label="Quốc gia" />
+            <Tab icon={tabIcons[2]} label="Yêu cầu host" />
+            <Tab icon={tabIcons[3]} label="Chỗ ở" />
+            <Tab icon={tabIcons[4]} label="Giao dịch" />
+            <Tab icon={tabIcons[5]} label="Báo cáo" />
+            <Tab icon={tabIcons[6]} label="Hỗ trợ" />
+            <Tab icon={tabIcons[7]} label="Hệ thống" />
+            <Tab icon={tabIcons[8]} label="Tiện ích" />
+            <Tab icon={tabIcons[9]} label="Danh mục" />
+            <Tab icon={tabIcons[10]} label="Đơn đặt phòng" />
+            <Tab icon={tabIcons[11]} label="Quốc gia" />
+            
           </Tabs>
         </Box>
 
@@ -279,32 +287,36 @@ export default function AdminPage() {
             <AdminUsers />
           </TabPanel>
           <TabPanel value={tabValue} index={2}>
-            <AdminProperties />
+            <AdminHostRequest />
           </TabPanel>
           <TabPanel value={tabValue} index={3}>
-            <AdminTransactions />
+            <AdminProperties />
           </TabPanel>
           <TabPanel value={tabValue} index={4}>
-            <AdminReports />
+            <AdminTransactions />
           </TabPanel>
           <TabPanel value={tabValue} index={5}>
-            <AdminSupports />
+            <AdminReports />
           </TabPanel>
           <TabPanel value={tabValue} index={6}>
-            <AdminSystem />
+            <AdminSupports />
           </TabPanel>
           <TabPanel value={tabValue} index={7}>
-            <AdminAmenities />
+            <AdminSystem />
           </TabPanel>
           <TabPanel value={tabValue} index={8}>
-            <AdminCategories />
+            <AdminAmenities />
           </TabPanel>
           <TabPanel value={tabValue} index={9}>
-            <AdminBookings />
+            <AdminCategories />
           </TabPanel>
           <TabPanel value={tabValue} index={10}>
+            <AdminBookings />
+          </TabPanel>
+          <TabPanel value={tabValue} index={11}>
             <AdminCountries />
           </TabPanel>
+          
         </Box>
       </Box>
 

@@ -195,10 +195,16 @@ export default function AdminReports() {
         }),
 
         feedback: createChart(feedbackRef.current, 'doughnut', {
-          labels: ['Tốt', 'Trung bình', 'Kém'],
+          labels: ['5 sao', '4 sao', '3 sao', '2 sao', '1 sao'],
           datasets: [{
-            data: [3, 1, 2],
-            backgroundColor: ['#66bb6a', '#ffee58', '#ef5350']
+            data: [5, 2, 1, 3, 1],
+            backgroundColor: [
+            '#4caf50', 
+            '#8bc34a', 
+            '#ffeb3b', 
+            '#ff9800', 
+            '#f44336'  
+          ],
           }]
         }, {
           plugins: {
