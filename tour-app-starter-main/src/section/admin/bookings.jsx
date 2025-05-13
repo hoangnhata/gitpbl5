@@ -117,7 +117,6 @@ export default function AdminBookings() {
   const handleStatusChange = async (id, newStatus) => {
     try {
       setLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 1000));
 
       setBookings(prev =>
         prev.map(booking =>

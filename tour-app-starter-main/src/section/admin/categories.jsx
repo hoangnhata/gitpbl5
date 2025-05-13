@@ -153,7 +153,6 @@ export default function AdminCategories() {
   const handleSaveIcon = async () => {
     try {
       setLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 1000));
 
       setCategories(prev =>
         prev.map(category =>

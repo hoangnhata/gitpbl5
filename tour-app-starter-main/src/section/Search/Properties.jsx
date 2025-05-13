@@ -2,9 +2,10 @@ import { Card, Grid, Box, Typography, IconButton } from "@mui/material";
 import Slider from "react-slick";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import StarIcon from "@mui/icons-material/Star";
-import { Link, useNavigate } from "react-router-dom"; // Import Link for routing and useNavigate for navigation
+import { useNavigate } from "react-router-dom"; // Chỉ giữ useNavigate
 import axiosInstance from "../../api/axiosConfig";
 import { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 
 const settings = {
   dots: true,
@@ -189,6 +190,10 @@ const Properties = ({ properties }) => {
       </Grid>
     </Box>
   );
+};
+
+Properties.propTypes = {
+  properties: PropTypes.array.isRequired,
 };
 
 export default Properties;

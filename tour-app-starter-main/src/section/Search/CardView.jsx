@@ -9,6 +9,7 @@ CardView.propTypes = {
   handleChangeTab: PropTypes.func,
   searchResults: PropTypes.array, // Thêm prop cho kết quả tìm kiếm
   isSearching: PropTypes.bool, // Thêm prop để biết đang trong trạng thái tìm kiếm
+  refreshKey: PropTypes.number, // Thêm refreshKey
 };
 
 function CustomTabPanel(props) {
@@ -58,6 +59,7 @@ export default function CardView(props) {
       }
       const response = await fetch(url);
       const data = await response.json();
+      console.log("API data:", data.result); // Thêm dòng này để kiểm tra
       setProperties(data.result);
     } catch (error) {
       console.error("Lỗi khi tải dữ liệu bất động sản: ", error);
@@ -77,7 +79,7 @@ export default function CardView(props) {
       const currentTabData = tabData[props.value];
       fetchProperties(currentTabData.id);
     }
-  }, [props.value, tabData, props.isSearching]);
+  }, [props.value, tabData, props.isSearching, props.refreshKey]);
 
   // Cập nhật properties khi có kết quả tìm kiếm
   useEffect(() => {
