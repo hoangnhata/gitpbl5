@@ -49,7 +49,7 @@ const HostRequest = () => {
       setSuccess("");
      
       const response = await axiosInstance.get("/api/users/host/apply");
-      const apiRequests = response.data.result.map((item, idx) => ({
+      const apiRequests = response.data.result.map((item) => ({
         id: item.id,
         fullname: item.fullname,
         avatar: item.thumbnailUrl || item.thumnailUrl || "/default-avatar.png",
@@ -110,6 +110,9 @@ const HostRequest = () => {
       setError("");
       setSuccess("");
       await axiosInstance.delete(`/api/users/host/status/${requestId}`);
+      
+      
+      
       setRequests(prevRequests => 
         prevRequests.map(request => 
           request.id === requestId 
@@ -117,7 +120,6 @@ const HostRequest = () => {
             : request
         )
       );
-      setSuccess("Đã từ chối yêu cầu");
       handleCloseDialog();
     } catch (err) {
       setError("Không thể từ chối yêu cầu");
@@ -255,7 +257,11 @@ const HostRequest = () => {
           {selectedRequest && (
             <>
               <DialogTitle>
-              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                  Chi tiết yêu cầu lên host
+                </Typography>
+
+                <Typography variant="h6" sx={{ fontWeight: 700 }}>
                   Chi tiết yêu cầu lên host
                 </Typography>
 
