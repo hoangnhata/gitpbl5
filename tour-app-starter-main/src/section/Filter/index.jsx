@@ -19,6 +19,7 @@ const Filter = () => {
     startDate: "",
     endDate: "",
     popular: false,
+    category_id: "",
   });
   const [amenitiesList, setAmenitiesList] = useState([]);
 
@@ -70,6 +71,7 @@ const Filter = () => {
     if (newState.endDate && newState.endDate.trim() !== "")
       filterObj.endDate = newState.endDate;
     if (newState.popular) filterObj.popular = true;
+    if (newState.category_id) filterObj.category_id = newState.category_id;
 
     console.log("Gọi filter với:", filterObj);
     filterListings(filterObj);
@@ -125,6 +127,7 @@ const Filter = () => {
                   startDate: "",
                   endDate: "",
                   popular: false,
+                  category_id: "",
                 });
                 filterListings({
                   lowestPrice: priceRange.min,

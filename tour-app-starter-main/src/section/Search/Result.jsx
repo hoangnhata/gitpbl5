@@ -11,6 +11,8 @@ const Result = ({
   properties: defaultProperties,
   searchResults,
   isSearching,
+  setIsSearching,
+  setSearchResults,
 }) => {
   const [view, setView] = useState("card");
   const [tabValue, setTabValue] = useState(0);
@@ -22,6 +24,8 @@ const Result = ({
 
   const handleChangeTab = (event, newValue) => {
     setTabValue(newValue);
+    if (setIsSearching) setIsSearching(false);
+    if (setSearchResults) setSearchResults([]);
   };
 
   // Process properties data for the map
@@ -129,6 +133,8 @@ Result.propTypes = {
   properties: PropTypes.array,
   searchResults: PropTypes.array,
   isSearching: PropTypes.bool,
+  setIsSearching: PropTypes.func,
+  setSearchResults: PropTypes.func,
 };
 
 export default Result;

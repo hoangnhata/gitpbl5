@@ -3,6 +3,7 @@ import PropTypes from "prop-types";
 import { useState, useEffect } from "react";
 import Properties from "./Properties"; // Import Properties component
 import CategoryIcon from "@mui/icons-material/Category";
+import { useFilter } from "../../contexts/useFilter"; // Thêm dòng này
 
 CardView.propTypes = {
   value: PropTypes.number,
@@ -31,6 +32,7 @@ export default function CardView(props) {
   const [tabData, setTabData] = useState([]);
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(false);
+  const { filterListings } = useFilter(); // Thêm dòng này
 
   // Hàm gọi API để lấy dữ liệu các tab
   const fetchTabsData = async () => {
@@ -55,7 +57,7 @@ export default function CardView(props) {
     try {
       let url = "http://localhost:8080/api/listings";
       if (id !== "all") {
-        url += `?categoryId=${id}`;
+        url = `http://localhost:8080/api/listings/filter?category_id=${id}`;
       }
       const response = await fetch(url);
       const data = await response.json();
@@ -88,12 +90,25 @@ export default function CardView(props) {
     }
   }, [props.searchResults, props.isSearching]);
 
+  // Sửa hàm handleChangeTab để gọi filterListings
+  const handleChangeTab = (event, newValue) => {
+    if (tabData.length > 0) {
+      const selectedCategory = tabData[newValue];
+      // Gọi filterListings với category_id
+      filterListings({
+        category_id: selectedCategory.id === "all" ? "" : selectedCategory.id,
+      });
+    }
+    // Gọi callback nếu cần thay đổi tab index ở parent
+    if (props.handleChangeTab) props.handleChangeTab(event, newValue);
+  };
+
   return (
     <Box sx={{ width: "100%" }}>
       <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
         <Tabs
           value={props.value}
-          onChange={props.handleChangeTab}
+          onChange={handleChangeTab}
           variant="scrollable"
           scrollButtons="auto"
           allowScrollButtonsMobile
