@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Box,
   Container,
@@ -20,8 +20,6 @@ import {
   DialogActions,
   Rating,
   Chip,
-  ImageList,
-  ImageListItem,
   Paper,
   IconButton,
   Tooltip,
@@ -63,120 +61,8 @@ import {
 } from "@mui/icons-material";
 import PropTypes from "prop-types";
 import axiosInstance from "../api/axiosConfig";
-
-// Mock data for demonstration
-const mockProperties = [
-  {
-    id: 1,
-    title: "Nhà cho thuê",
-    description:
-      "Có 5 loại phòng trong biệt thự Ngân Phú: Phòng đôi, phòng 3 người, phòng đơn, phòng 2 giường đơn và phòng 4 người.\nNằm ở vị trí lý tưởng ở một vị trí tuyệt vời chỉ cách trung tâm Hội An 2 km và cách bãi biển Cửa Đại 2 km,\nvới phòng hiện đại đẹp mắt và hiện đại yên tĩnh tuyệt đẹp, nhà của chúng tôi là nơi tốt nhất ở Hội An\ncho những ai muốn tận hưởng một kỳ nghỉ thoải mái trong bầu không khí ấm cúng như ở nhà.",
-    address: "Phố Cổ Hội An",
-    country: "Việt Nam",
-    avgStart: 4.5,
-    hostThumnailUrl: null,
-    popular: true,
-    startDate: "2025-04-13",
-    endDate: "2025-07-01",
-    price: 100.5,
-    images: ["uploads/anh11.png", "uploads/anh22.png"],
-    amenites: [
-      {
-        thumnailUrl: "/uploads/huongnhinravuon.png",
-        name: "Hướng nhìn ra vườn",
-      },
-      {
-        thumnailUrl: "/uploads/huongnhinranuii.png",
-        name: "Hướng nhìn ra núi",
-      },
-      {
-        thumnailUrl: "/uploads/bep.png",
-        name: "Bếp",
-      },
-      {
-        thumnailUrl: "/uploads/chodoxxemienphi.png",
-        name: "Chỗ đỗ xe miễn phí tại nơi ở",
-      },
-      {
-        thumnailUrl: "/uploads/maygiat.png",
-        name: "Máy giặt",
-      },
-      {
-        thumnailUrl: "/uploads/output_wifi.png",
-        name: "Wifi",
-      },
-      {
-        thumnailUrl: "/uploads/hoboichung.png",
-        name: "Hồ bơi chung",
-      },
-      {
-        thumnailUrl: "/uploads/tivi.png",
-        name: "Ti vi",
-      },
-    ],
-  },
-];
-
-const mockMessages = [
-  {
-    id: 1,
-    guest: "John Doe",
-    property: "Nhà cho thuê",
-    message: "Xin chào, tôi muốn đặt biệt thự của bạn cho tuần tới.",
-    date: "2024-03-20",
-  },
-  {
-    id: 2,
-    guest: "Jane Smith",
-    property: "Nhà bãi biển",
-    message: "Tài sản có sẵn cho cuối tuần không?",
-    date: "2024-03-19",
-  },
-];
-
-// Add mock chat messages
-const mockChatMessages = {
-  1: [
-    {
-      id: 1,
-      sender: "John Doe",
-      message: "Xin chào, tôi muốn đặt biệt thự của bạn cho tuần tới.",
-      timestamp: "2024-03-20T10:00:00",
-      isHost: false,
-    },
-    {
-      id: 2,
-      sender: "Host",
-      message:
-        "Xin chào! Vâng, biệt thự có sẵn cho tuần tới. Bạn quan tâm đến những ngày nào?",
-      timestamp: "2024-03-20T10:05:00",
-      isHost: true,
-    },
-    {
-      id: 3,
-      sender: "John Doe",
-      message: "Tôi đang tìm từ ngày 1 tháng 4 đến ngày 5 tháng 4.",
-      timestamp: "2024-03-20T10:10:00",
-      isHost: false,
-    },
-  ],
-  2: [
-    {
-      id: 1,
-      sender: "Jane Smith",
-      message: "Tài sản có sẵn cho cuối tuần không?",
-      timestamp: "2024-03-19T15:00:00",
-      isHost: false,
-    },
-    {
-      id: 2,
-      sender: "Host",
-      message: "Vâng, nó có sẵn! Bạn có muốn đặt phòng không?",
-      timestamp: "2024-03-19T15:05:00",
-      isHost: true,
-    },
-  ],
-};
+import SockJS from "sockjs-client";
+import { Stomp } from "@stomp/stompjs";
 
 function TabPanel({ children, value, index }) {
   return (
@@ -194,8 +80,8 @@ TabPanel.propTypes = {
 
 export default function HostPage() {
   const [tabValue, setTabValue] = useState(0);
-  const [properties, setProperties] = useState(mockProperties);
-  const [messages] = useState(mockMessages);
+  const [properties, setProperties] = useState([]);
+  const [messages, setMessages] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -204,7 +90,7 @@ export default function HostPage() {
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [selectedChat, setSelectedChat] = useState(null);
   const [newMessage, setNewMessage] = useState("");
-  const [chatMessages, setChatMessages] = useState(mockChatMessages);
+  const [chatMessages, setChatMessages] = useState({});
   const [openPropertyDialog, setOpenPropertyDialog] = useState(false);
   const [imageFiles, setImageFiles] = useState([]);
   const [countryOptions, setCountryOptions] = useState([]);
@@ -222,6 +108,8 @@ export default function HostPage() {
     price: "",
     images: [],
     amenites: [],
+    categories: [],
+    status: "",
   });
 
   const [hostInfo, setHostInfo] = useState(null);
@@ -237,6 +125,20 @@ export default function HostPage() {
   });
 
   const [hostAvatarPreview, setHostAvatarPreview] = useState(null);
+
+  const [persons, setPersons] = useState([]);
+  const [selectedPerson, setSelectedPerson] = useState(null);
+  const [message, setMessage] = useState("");
+  const stompClient = useRef(null);
+  const user = JSON.parse(localStorage.getItem("user"));
+
+  const [amenities, setAmenities] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategories, setSelectedCategories] = useState([]);
+
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingPropertyId, setEditingPropertyId] = useState(null);
+  const [editingPropertyData, setEditingPropertyData] = useState(null);
 
   const fetchHostInfo = async () => {
     try {
@@ -280,12 +182,121 @@ export default function HostPage() {
     });
   }, []);
 
+  useEffect(() => {
+    axiosInstance.get("/api/chat/persons").then((res) => {
+      setPersons(res.data.result || []);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (selectedPerson) {
+      axiosInstance.get(`/api/chat/simple/${selectedPerson.id}`).then((res) => {
+        setMessages(res.data.result || []);
+      });
+    }
+  }, [selectedPerson]);
+
+  useEffect(() => {
+    const socket = new SockJS("http://localhost:8080/ws");
+    stompClient.current = Stomp.over(socket);
+
+    stompClient.current.connect(
+      { Authorization: `Bearer ${localStorage.getItem("accessToken")}` },
+      () => {
+        stompClient.current.subscribe(
+          `/user/${user.username}/queue/messages`,
+          () => {
+            if (selectedPerson) {
+              axiosInstance
+                .get(`/api/chat/simple/${selectedPerson.id}`)
+                .then((res) => {
+                  setMessages(res.data.result || []);
+                });
+            }
+          }
+        );
+      }
+    );
+
+    return () => {
+      if (stompClient.current) stompClient.current.disconnect();
+    };
+  }, [user.username, selectedPerson]);
+
+  useEffect(() => {
+    axiosInstance.get("/api/amenities").then((res) => {
+      setAmenities(res.data.result || []);
+    });
+  }, []);
+
+  useEffect(() => {
+    axiosInstance.get("/api/categories").then((res) => {
+      setCategories(res.data.result || []);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (isEditMode && editingPropertyData && categories.length > 0) {
+      setSelectedCategories(
+        categories.filter((cat) =>
+          (editingPropertyData.categories || []).some(
+            (selected) => selected.id === cat.id
+          )
+        )
+      );
+    }
+    console.log("Editing data:", editingPropertyData);
+    console.log("Categories:", categories);
+  }, [isEditMode, editingPropertyData, categories]);
+
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
   };
 
   const handleAddProperty = () => {
     setOpenPropertyDialog(true);
+    setIsEditMode(false);
+    setNewProperty({
+      title: "",
+      description: "",
+      address: "",
+      country: "",
+      avgStart: 0,
+      popular: false,
+      startDate: "",
+      endDate: "",
+      price: "",
+      images: [],
+      amenites: [],
+      categories: [],
+      status: "ACTIVE",
+    });
+  };
+
+  const handleEditProperty = (property) => {
+    setIsEditMode(true);
+    setEditingPropertyId(property.id);
+    setOpenPropertyDialog(true);
+    console.log("Editing property data:", property);
+    setNewProperty({
+      ...property,
+      title: property.title || property.name || "",
+      description: property.description || "",
+      address: property.address || "",
+      city: property.city || "",
+      country: property.country || "",
+      area: property.area || "",
+      startDate: property.startDate || "",
+      endDate: property.endDate || "",
+      price: property.price || "",
+      status: property.status || "ACTIVE",
+      avgStart: property.avgStart || 0,
+      popular: property.popular || false,
+      images: property.images || [],
+      amenites: property.amenites || [],
+      categories: property.categories || [],
+    });
+    setEditingPropertyData(property);
   };
 
   const handleClosePropertyDialog = () => {
@@ -302,49 +313,102 @@ export default function HostPage() {
       price: "",
       images: [],
       amenites: [],
+      categories: [],
+      status: "",
     });
+    setSelectedCategories([]);
+    setIsEditMode(false);
+    setEditingPropertyId(null);
+    setEditingPropertyData(null);
   };
 
   const handleSaveProperty = async () => {
     try {
       setIsLoading(true);
       const formData = new FormData();
-      formData.append("title", newProperty.title);
-      formData.append("description", newProperty.description);
-      formData.append("address", newProperty.address);
-      formData.append("country", newProperty.country);
-      formData.append("city", newProperty.city);
-      formData.append("price", newProperty.price);
-      formData.append("area", newProperty.area);
-      formData.append("startDate", newProperty.startDate);
-      formData.append("endDate", newProperty.endDate);
+      if (isEditMode) {
+        formData.append("id", editingPropertyId || "");
+      }
+      formData.append("title", newProperty.title || "");
+      formData.append("description", newProperty.description || "");
+      formData.append("address", newProperty.address || "");
+      formData.append("city", newProperty.city || "");
+      formData.append("country", newProperty.country || "");
+      formData.append("area", newProperty.area || "");
+      formData.append("startDate", newProperty.startDate || "");
+      formData.append("endDate", newProperty.endDate || "");
+      formData.append("price", newProperty.price || "");
+      formData.append("status", newProperty.status || "ACTIVE");
+      formData.append("avgStart", newProperty.avgStart || 0);
+      formData.append("popular", newProperty.popular ? "true" : "false");
       formData.append(
         "amenites",
-        newProperty.amenites.map((a) => a.name).join(",")
+        newProperty.amenites && newProperty.amenites.length > 0
+          ? newProperty.amenites.map((a) => a.name).join(",")
+          : ""
       );
-      // Thêm từng file ảnh
-      imageFiles.forEach((file) => {
-        formData.append("imgs", file);
-      });
-
+      formData.append(
+        "categories",
+        newProperty.categories && newProperty.categories.length > 0
+          ? newProperty.categories.map((c) => c.name).join(",")
+          : selectedCategories && selectedCategories.length > 0
+          ? selectedCategories.map((c) => c.name).join(",")
+          : ""
+      );
+      // Nếu có ảnh mới thì gửi lên
+      if (imageFiles.length > 0) {
+        imageFiles.forEach((file) => {
+          formData.append("imgs", file);
+        });
+      }
       // Gửi request
-      const res = await axiosInstance.post("/api/listings", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
+      let res;
+      if (isEditMode) {
+        res = await axiosInstance.put("/api/listings/host", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
+      } else {
+        res = await axiosInstance.post("/api/listings", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
+      }
       if (res.data && (res.data.code === 200 || res.status === 200)) {
         setShowSuccessAlert(true);
         handleClosePropertyDialog();
-        setProperties((prev) => [...prev, res.data.newProperty]);
+        setProperties((prev) => {
+          if (isEditMode) {
+            return prev.map((p) =>
+              p.id === editingPropertyId ? { ...p, ...res.data.result } : p
+            );
+          } else {
+            return [...prev, res.data.result];
+          }
+        });
       } else {
-        alert(res.data.message || "Đăng tài sản thất bại!");
+        alert(
+          res.data.message ||
+            (isEditMode
+              ? "Cập nhật tài sản thất bại!"
+              : "Đăng tài sản thất bại!")
+        );
+      }
+      // Log lại dữ liệu gửi lên
+      for (let pair of formData.entries()) {
+        console.log(pair[0] + ": " + pair[1]);
       }
     } catch (err) {
-      alert("Có lỗi xảy ra khi đăng tài sản!");
+      console.log(err.response?.data);
+      alert(
+        "Có lỗi xảy ra khi " + (isEditMode ? "cập nhật" : "đăng") + " tài sản!"
+      );
     } finally {
       setIsLoading(false);
+      setIsEditMode(false);
+      setEditingPropertyId(null);
     }
   };
 
@@ -454,14 +518,94 @@ export default function HostPage() {
     return `http://localhost:8080/${img}`; // thay bằng domain backend thật của bạn
   };
 
+  const getAmenityImageUrl = (url) => {
+    if (!url) return "/default-image.png";
+    if (url.startsWith("http")) return url;
+    return `http://localhost:8080${url}`;
+  };
+
   const MAX_DESC = 180;
   const desc = hostInfo?.description || "";
   const isLong = desc.length > MAX_DESC;
   const displayDesc =
     showMore || !isLong ? desc : desc.slice(0, MAX_DESC) + "...";
 
+  const handleSend = () => {
+    if (!message.trim() || !selectedPerson) return;
+    const newMsg = {
+      id: Date.now(),
+      senderUsername: user.username,
+      receiverUsername: selectedPerson.username,
+      content: message,
+      timestamp: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, newMsg]);
+    stompClient.current.send(
+      "/app/chat",
+      {},
+      JSON.stringify({
+        senderID: user.id,
+        receiverID: selectedPerson.id,
+        content: message,
+      })
+    );
+    setMessage("");
+  };
+
+  const fetchPropertiesFromAPI = async () => {
+    try {
+      setIsLoading(true);
+      const res = await axiosInstance.get("/api/listings/host");
+      if (res.data && res.data.result) {
+        setProperties(
+          res.data.result.map((item) => ({
+            id: item.id,
+            title: item.name,
+            address: item.address,
+            city: item.city,
+            country: item.country,
+            images: item.images || [],
+            amenites: item.amenites || [],
+            categories: item.categories || [],
+            description: item.description || "", 
+            startDate: item.startDate,
+            endDate: item.endDate,
+            price: item.price,
+            status: item.status,
+            avgStart: item.avgStart,
+            area: item.area || "",
+            // ... các trường khác nếu cần
+          }))
+        );
+      }
+    } catch (err) {
+      setProperties([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPropertiesFromAPI();
+  }, []);
+
+  const handleCategoryChipClick = (cat) => {
+    const exists = selectedCategories.find((c) => c.id === cat.id);
+    let newSelected;
+    if (exists) {
+      newSelected = selectedCategories.filter((c) => c.id !== cat.id);
+    } else {
+      newSelected = [...selectedCategories, cat];
+    }
+    setSelectedCategories(newSelected);
+    setNewProperty({ ...newProperty, categories: newSelected });
+  };
+
   return (
-    <Container maxWidth="lg">
+    <Container
+      maxWidth="lg"
+      sx={{ fontFamily: '"Be Vietnam Pro", sans-serif' }}
+    >
       <Box sx={{ mt: 4, mb: 4 }}>
         {/* Header Section */}
         <Paper
@@ -622,7 +766,13 @@ export default function HostPage() {
 
         {/* Tab Thông tin Host */}
         <TabPanel value={tabValue} index={0}>
-          <Box sx={{ maxWidth: 700, mx: "auto" }}>
+          <Box
+            sx={{
+              maxWidth: 700,
+              mx: "auto",
+              fontFamily: '"Be Vietnam Pro", sans-serif',
+            }}
+          >
             {/* Hiển thị thông tin host */}
             {loadingHost ? (
               <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
@@ -804,7 +954,9 @@ export default function HostPage() {
             )}
 
             {/* Chỉnh sửa thông tin Host */}
-            <Card sx={{ p: 3, mt: 3 }}>
+            <Card
+              sx={{ p: 3, mt: 3, fontFamily: '"Be Vietnam Pro", sans-serif' }}
+            >
               <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
                 Chỉnh sửa thông tin Host
               </Typography>
@@ -907,106 +1059,217 @@ export default function HostPage() {
           <Grid container spacing={3}>
             {sortedProperties.map((property) => (
               <Grid item xs={12} md={6} key={property.id}>
-                <Card sx={{ p: 2 }}>
-                  <Box sx={{ position: "relative" }}>
-                    <ImageList
-                      sx={{ width: "100%", height: 200 }}
-                      cols={2}
-                      rowHeight={200}
-                    >
-                      {property.images.map((image, index) => (
-                        <ImageListItem key={index}>
-                          <img
-                            src={getImageUrl(image)}
-                            alt={`Property ${index + 1}`}
-                            loading="lazy"
-                            style={{ objectFit: "cover" }}
-                          />
-                        </ImageListItem>
-                      ))}
-                    </ImageList>
-                    <Box sx={{ position: "absolute", top: 8, right: 8 }}>
-                      <IconButton
-                        onClick={(e) => handleMenuOpen(e, property)}
-                        sx={{ bgcolor: "background.paper" }}
-                      >
-                        <MoreVertIcon />
-                      </IconButton>
-                    </Box>
-                  </Box>
-
-                  <Box sx={{ mt: 2 }}>
-                    <Typography variant="h6">{property.title}</Typography>
-                    <Typography color="textSecondary">
-                      {property.address}, {property.country}
-                    </Typography>
-                    <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
-                      <Rating
-                        value={property.avgStart}
-                        precision={0.5}
-                        readOnly
-                        size="small"
-                      />
-                      <Typography variant="body2" sx={{ ml: 1 }}>
-                        {property.avgStart}
-                      </Typography>
-                    </Box>
-                    <Typography variant="h6" color="primary" sx={{ mt: 1 }}>
-                      ${property.price}/night
-                    </Typography>
-
+                <Card
+                  sx={{
+                    p: 0,
+                    borderRadius: 6,
+                    // boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.37)",
+                    bgcolor: "rgba(24,25,26,0.7)",
+                    color: "#fff",
+                    overflow: "hidden",
+                    mb: 3,
+                    position: "relative",
+                    // border: "1.5px solid rgba(255,255,255,0.18)",
+                    backdropFilter: "blur(8px)",
+                    minHeight: 420,
+                    transition: "box-shadow 0.3s, transform 0.2s",
+                    "&:hover": {
+                      boxShadow: 16,
+                      transform: "translateY(-4px) scale(1.01)",
+                    },
+                  }}
+                >
+                  {/* Ảnh đại diện với overlay */}
+                  <Box
+                    sx={{
+                      position: "relative",
+                      height: 200,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <img
+                      src={getImageUrl(property.images[0])}
+                      alt={property.title}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        display: "block",
+                        borderTopLeftRadius: 24,
+                        borderTopRightRadius: 24,
+                        filter: "brightness(0.85)",
+                      }}
+                    />
                     <Box
-                      sx={{ mt: 2, display: "flex", flexWrap: "wrap", gap: 1 }}
+                      sx={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        width: "100%",
+                        height: "100%",
+                        background:
+                          "linear-gradient(180deg,rgba(0,0,0,0.2) 60%,rgba(24,25,26,0.8) 100%)",
+                      }}
+                    />
+                    {property.status && (
+                      <Chip
+                        label={
+                          property.status?.toLowerCase() === "active"
+                            ? "Đang hoạt động"
+                            : "Không hoạt động"
+                        }
+                        sx={{
+                          position: "absolute",
+                          top: 16,
+                          left: 16,
+                          bgcolor:
+                            property.status?.toLowerCase() === "active"
+                              ? "#43ea7f"
+                              : "#bdbdbd",
+                          color: "#18191a",
+                          fontWeight: 700,
+                          fontSize: 13,
+                          borderRadius: 99,
+                          px: 2,
+                          py: 0.5,
+                          boxShadow: 2,
+                          letterSpacing: 0.5,
+                        }}
+                      />
+                    )}
+                  </Box>
+                  {/* Nội dung */}
+                  <Box
+                    sx={{
+                      p: 3,
+                      pt: 2,
+                      fontFamily: '"Be Vietnam Pro", sans-serif',
+                    }}
+                  >
+                    <Typography
+                      variant="h6"
+                      fontWeight={800}
+                      sx={{
+                        mb: 0.5,
+                        color: "#fff",
+                        textAlign: "center",
+                        letterSpacing: 0.2,
+                        textShadow: "0 2px 8px rgba(0,0,0,0.18)",
+                      }}
                     >
-                      {property.amenites.map((amenity, index) => (
-                        <Chip
-                          key={index}
-                          label={amenity.name}
-                          size="small"
-                          avatar={<Avatar src={amenity.thumnailUrl} />}
-                        />
-                      ))}
-                    </Box>
-
-                    <Divider sx={{ my: 2 }} />
-
+                      {property.title}
+                    </Typography>
                     <Stack
                       direction="row"
+                      alignItems="center"
+                      justifyContent="center"
                       spacing={1}
-                      justifyContent="space-between"
+                      sx={{ mb: 1 }}
                     >
-                      <Button
-                        variant="outlined"
-                        startIcon={<EditIcon />}
-                        size="small"
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        color="error"
-                        startIcon={<DeleteIcon />}
-                        size="small"
-                      >
-                        Delete
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        startIcon={<ShareIcon />}
-                        size="small"
-                        onClick={() => handleShare(property)}
-                      >
-                        Share
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        startIcon={<BookmarkIcon />}
-                        size="small"
-                        onClick={() => handleBookmark(property)}
-                      >
-                        Save
-                      </Button>
+                      <LocationOnIcon sx={{ fontSize: 18, color: "#ff385c" }} />
+                      <Typography variant="body2" sx={{ color: "#bdbdbd" }}>
+                        {property.address}, {property.city}, {property.country}
+                      </Typography>
                     </Stack>
+                    <Stack
+                      direction="row"
+                      alignItems="center"
+                      justifyContent="center"
+                      spacing={2}
+                      sx={{ mb: 2 }}
+                    >
+                      <Stack direction="row" alignItems="center" spacing={0.5}>
+                        <StarIcon sx={{ color: "#ffd700", fontSize: 22 }} />
+                        <Typography
+                          variant="body1"
+                          sx={{
+                            color: "#ffd700",
+                            fontWeight: 700,
+                            fontFamily: '"Be Vietnam Pro", sans-serif',
+                          }}
+                        >
+                          {property.avgStart}
+                        </Typography>
+                      </Stack>
+                      <Typography
+                        variant="h5"
+                        fontWeight={900}
+                        sx={{
+                          color: "#ff385c",
+                          ml: 2,
+                          background: "rgba(255,255,255,0.08)",
+                          px: 2,
+                          py: 0.5,
+                          borderRadius: 2,
+                          boxShadow: 1,
+                          fontFamily: '"Be Vietnam Pro", sans-serif',
+                        }}
+                      >
+                        {property.price?.toLocaleString("vi-VN")}₫/đêm
+                      </Typography>
+                    </Stack>
+                    {/* Amenities dạng icon tròn nhỏ */}
+                    <Stack
+                      direction="row"
+                      spacing={1.5}
+                      justifyContent="center"
+                      sx={{ flexWrap: "wrap", mb: 2 }}
+                    >
+                      {property.amenites.slice(0, 5).map((amenity, idx) => (
+                        <Tooltip title={amenity.name} key={idx}>
+                          <Avatar
+                            src={getAmenityImageUrl(amenity.thumnailUrl)}
+                            sx={{
+                              width: 32,
+                              height: 32,
+                              bgcolor: "#232323",
+                              color: "#fff",
+                              fontWeight: 600,
+                              fontSize: 16,
+                              border: "2px solid #232323",
+                              boxShadow: 1,
+                              fontFamily: '"Be Vietnam Pro", sans-serif',
+                            }}
+                          >
+                            {amenity.thumnailUrl ? "" : amenity.name?.[0]}
+                          </Avatar>
+                        </Tooltip>
+                      ))}
+                      {property.amenites.length > 5 && (
+                        <Avatar
+                          sx={{
+                            width: 32,
+                            height: 32,
+                            bgcolor: "#232323",
+                            color: "#fff",
+                            fontWeight: 600,
+                            fontSize: 16,
+                            fontFamily: '"Be Vietnam Pro", sans-serif',
+                          }}
+                        >
+                          +{property.amenites.length - 5}
+                        </Avatar>
+                      )}
+                    </Stack>
+                    <Divider
+                      sx={{ my: 1.5, borderColor: "rgba(255,255,255,0.12)" }}
+                    />
+                    {/* Nút Edit icon tròn nổi bật */}
+                    <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+                      <IconButton
+                        sx={{
+                          bgcolor: "#ff385c",
+                          color: "#fff",
+                          borderRadius: "50%",
+                          boxShadow: 2,
+                          fontFamily: '"Be Vietnam Pro", sans-serif',
+                          "&:hover": { bgcolor: "#d32f2f" },
+                        }}
+                        onClick={() => handleEditProperty(property)}
+                      >
+                        <EditIcon />
+                      </IconButton>
+                    </Box>
                   </Box>
                 </Card>
               </Grid>
@@ -1017,222 +1280,196 @@ export default function HostPage() {
         {/* Tab Tin nhắn */}
         <TabPanel value={tabValue} index={2}>
           <Grid container spacing={2}>
-            {/* Chat List */}
+            {/* Danh sách chat */}
             <Grid item xs={12} md={4}>
-              <Paper sx={{ height: "calc(100vh - 200px)", overflow: "auto" }}>
+              <Paper
+                sx={{
+                  height: "calc(100vh - 200px)",
+                  overflow: "auto",
+                  bgcolor: "#18191a",
+                }}
+              >
                 <Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
                   <TextField
                     fullWidth
                     placeholder="Tìm kiếm tin nhắn..."
                     InputProps={{
                       startAdornment: (
-                        <SearchIcon sx={{ mr: 1, color: "text.secondary" }} />
+                        <MessageIcon sx={{ mr: 1, color: "text.secondary" }} />
                       ),
+                    }}
+                    sx={{
+                      input: { color: "#fff" },
+                      "& .MuiOutlinedInput-root": { bgcolor: "#232323" },
                     }}
                   />
                 </Box>
                 <List>
-                  {messages.map((message) => (
+                  {persons.map((person) => (
                     <ListItem
-                      key={message.id}
+                      key={person.id}
                       button
-                      onClick={() => handleOpenChat(message)}
-                      selected={selectedChat === message.id}
+                      selected={selectedPerson?.id === person.id}
+                      onClick={() => setSelectedPerson(person)}
                       sx={{
-                        "&.Mui-selected": {
-                          bgcolor: "action.selected",
-                        },
+                        bgcolor:
+                          selectedPerson?.id === person.id
+                            ? "#232323"
+                            : "inherit",
+                        "&:hover": { bgcolor: "#232323" },
                       }}
                     >
                       <ListItemAvatar>
-                        <Avatar>{message.guest[0]}</Avatar>
+                        <Avatar>{person.fullname?.[0]}</Avatar>
                       </ListItemAvatar>
                       <ListItemText
-                        primary={message.guest}
+                        primary={
+                          <Typography sx={{ color: "#fff" }}>
+                            {person.fullname}
+                          </Typography>
+                        }
                         secondary={
-                          <>
-                            <Typography
-                              component="span"
-                              variant="body2"
-                              color="text.primary"
-                              sx={{ display: "block" }}
-                            >
-                              {message.property}
-                            </Typography>
-                            <Typography
-                              component="span"
-                              variant="body2"
-                              color="text.secondary"
-                              sx={{
-                                display: "block",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                              }}
-                            >
-                              {message.message}
-                            </Typography>
-                          </>
+                          <Typography sx={{ color: "#bdbdbd" }}>
+                            {person.email}
+                          </Typography>
                         }
                       />
-                      <Typography variant="caption" color="text.secondary">
-                        {new Date(message.date).toLocaleDateString()}
-                      </Typography>
                     </ListItem>
                   ))}
                 </List>
               </Paper>
             </Grid>
-
-            {/* Chat Window */}
+            {/* Cửa sổ chat */}
             <Grid item xs={12} md={8}>
               <Paper
                 sx={{
                   height: "calc(100vh - 200px)",
                   display: "flex",
                   flexDirection: "column",
+                  bgcolor: "#18191a",
                 }}
               >
-                {selectedChat ? (
-                  <>
-                    {/* Chat Header */}
-                    <Box
-                      sx={{
-                        p: 2,
-                        borderBottom: 1,
-                        borderColor: "divider",
-                        bgcolor: "background.default",
-                      }}
-                    >
-                      <Stack direction="row" alignItems="center" spacing={2}>
-                        <Avatar>
-                          {
-                            messages.find((m) => m.id === selectedChat)
-                              ?.guest[0]
-                          }
-                        </Avatar>
-                        <Box>
-                          <Typography variant="subtitle1">
-                            {messages.find((m) => m.id === selectedChat)?.guest}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {
-                              messages.find((m) => m.id === selectedChat)
-                                ?.property
-                            }
-                          </Typography>
-                        </Box>
-                      </Stack>
-                    </Box>
-
-                    {/* Chat Messages */}
-                    <Box
-                      sx={{
-                        flexGrow: 1,
-                        overflow: "auto",
-                        p: 2,
-                        bgcolor: "grey.50",
-                      }}
-                    >
-                      <Stack spacing={2}>
-                        {chatMessages[selectedChat]?.map((msg) => (
-                          <Box
-                            key={msg.id}
-                            sx={{
-                              display: "flex",
-                              justifyContent: msg.isHost
-                                ? "flex-end"
-                                : "flex-start",
-                            }}
-                          >
-                            <Box
-                              sx={{
-                                maxWidth: "70%",
-                                bgcolor: msg.isHost
-                                  ? "primary.main"
-                                  : "background.paper",
-                                color: msg.isHost
-                                  ? "primary.contrastText"
-                                  : "text.primary",
-                                p: 2,
-                                borderRadius: 2,
-                                boxShadow: 1,
-                              }}
-                            >
-                              <Typography variant="body1">
-                                {msg.message}
-                              </Typography>
-                              <Typography
-                                variant="caption"
-                                sx={{ opacity: 0.7 }}
-                              >
-                                {formatTimestamp(msg.timestamp)}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        ))}
-                      </Stack>
-                    </Box>
-
-                    {/* Message Input */}
-                    <Box
-                      sx={{
-                        p: 2,
-                        borderTop: 1,
-                        borderColor: "divider",
-                        bgcolor: "background.default",
-                      }}
-                    >
-                      <Stack direction="row" spacing={1}>
-                        <IconButton>
-                          <AttachFileIcon />
-                        </IconButton>
-                        <IconButton>
-                          <EmojiIcon />
-                        </IconButton>
-                        <TextField
-                          fullWidth
-                          placeholder="Nhập tin nhắn..."
-                          value={newMessage}
-                          onChange={(e) => setNewMessage(e.target.value)}
-                          onKeyPress={(e) => {
-                            if (e.key === "Enter" && !e.shiftKey) {
-                              e.preventDefault();
-                              handleSendMessage();
-                            }
-                          }}
-                          InputProps={{
-                            endAdornment: (
-                              <InputAdornment position="end">
-                                <IconButton
-                                  color="primary"
-                                  onClick={handleSendMessage}
-                                  disabled={!newMessage.trim()}
-                                >
-                                  <SendIcon />
-                                </IconButton>
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-                      </Stack>
-                    </Box>
-                  </>
-                ) : (
+                {/* Header chat */}
+                {selectedPerson && (
                   <Box
                     sx={{
-                      height: "100%",
+                      p: 2,
+                      borderBottom: 1,
+                      borderColor: "divider",
+                      bgcolor: "#232323",
                       display: "flex",
                       alignItems: "center",
-                      justifyContent: "center",
-                      bgcolor: "grey.50",
+                      gap: 2,
                     }}
                   >
-                    <Typography variant="h6" color="text.secondary">
-                      Chọn một cuộc trò chuyện để bắt đầu nhắn tin
-                    </Typography>
+                    <Avatar>{selectedPerson.fullname?.[0]}</Avatar>
+                    <Box>
+                      <Typography sx={{ color: "#fff", fontWeight: 700 }}>
+                        {selectedPerson.fullname}
+                      </Typography>
+                      <Typography sx={{ color: "#bdbdbd", fontSize: 14 }}>
+                        {selectedPerson.email}
+                      </Typography>
+                    </Box>
                   </Box>
                 )}
+                {/* Tin nhắn */}
+                <Box
+                  sx={{
+                    flexGrow: 1,
+                    overflow: "auto",
+                    p: 2,
+                    bgcolor: "#18191a",
+                  }}
+                >
+                  <Stack spacing={2}>
+                    {messages.map((msg) => (
+                      <Box
+                        key={msg.id}
+                        sx={{
+                          display: "flex",
+                          justifyContent:
+                            msg.senderUsername === user.username
+                              ? "flex-end"
+                              : "flex-start",
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            maxWidth: "70%",
+                            bgcolor:
+                              msg.senderUsername === user.username
+                                ? "#d32f2f"
+                                : "#232323",
+                            color: "#fff",
+                            p: 2,
+                            borderRadius: 3,
+                            boxShadow: 1,
+                          }}
+                        >
+                          <Typography variant="body1">{msg.content}</Typography>
+                          <Typography
+                            variant="caption"
+                            sx={{ opacity: 0.7, display: "block", mt: 0.5 }}
+                          >
+                            {new Date(msg.timestamp).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    ))}
+                  </Stack>
+                </Box>
+                {/* Input */}
+                <Box
+                  sx={{
+                    p: 2,
+                    borderTop: 1,
+                    borderColor: "divider",
+                    bgcolor: "#232323",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                  }}
+                >
+                  <IconButton>
+                    <span role="img" aria-label="attach">
+                      📎
+                    </span>
+                  </IconButton>
+                  <IconButton>
+                    <span role="img" aria-label="emoji">
+                      😊
+                    </span>
+                  </IconButton>
+                  <TextField
+                    fullWidth
+                    placeholder="Nhập tin nhắn..."
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSend();
+                      }
+                    }}
+                    sx={{
+                      input: { color: "#fff" },
+                      "& .MuiOutlinedInput-root": { bgcolor: "#232323" },
+                    }}
+                  />
+                  <Button
+                    variant="contained"
+                    endIcon={<SendIcon />}
+                    onClick={handleSend}
+                    disabled={!message.trim() || !selectedPerson}
+                    sx={{ ml: 1, bgcolor: "#d32f2f" }}
+                  >
+                    Gửi
+                  </Button>
+                </Box>
               </Paper>
             </Grid>
           </Grid>
@@ -1292,7 +1529,9 @@ export default function HostPage() {
         maxWidth="md"
         fullWidth
       >
-        <DialogTitle>Thêm tài sản mới</DialogTitle>
+        <DialogTitle>
+          {isEditMode ? "Chỉnh sửa tài sản" : "Thêm tài sản mới"}
+        </DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
@@ -1344,11 +1583,11 @@ export default function HostPage() {
             <Grid item xs={12} md={6}>
               <Select
                 fullWidth
-                displayEmpty
                 value={newProperty.country}
                 onChange={(e) =>
                   setNewProperty({ ...newProperty, country: e.target.value })
                 }
+                displayEmpty
                 renderValue={(selected) => selected || "Chọn quốc gia"}
               >
                 <MenuItem value="" disabled>
@@ -1409,10 +1648,30 @@ export default function HostPage() {
             </Grid>
             <Grid item xs={12}>
               <Typography variant="subtitle1" gutterBottom>
+                Danh mục
+              </Typography>
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                {categories.map((cat) => (
+                  <Chip
+                    key={cat.id}
+                    label={cat.name}
+                    clickable
+                    color={
+                      selectedCategories.some((c) => c.id === cat.id)
+                        ? "primary"
+                        : "default"
+                    }
+                    onClick={() => handleCategoryChipClick(cat)}
+                  />
+                ))}
+              </Box>
+            </Grid>
+            <Grid item xs={12}>
+              <Typography variant="subtitle1" gutterBottom>
                 Tiện nghi
               </Typography>
               <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                {mockProperties[0].amenites.map((amenity, index) => (
+                {amenities.map((amenity, index) => (
                   <Chip
                     key={index}
                     label={amenity.name}
@@ -1492,6 +1751,31 @@ export default function HostPage() {
                     ))}
               </Box>
             </Grid>
+            {isEditMode && (
+              <Grid item xs={12} md={6}>
+                <Select
+                  fullWidth
+                  value={newProperty.status}
+                  onChange={(e) =>
+                    setNewProperty({ ...newProperty, status: e.target.value })
+                  }
+                  displayEmpty
+                  renderValue={(selected) => {
+                    if (!selected) return "Chọn trạng thái";
+                    if (selected === "ACTIVE") return "Đang hoạt động";
+                    if (selected === "INACTIVE") return "Không hoạt động";
+                    return selected;
+                  }}
+                  error={!newProperty.status}
+                >
+                  <MenuItem value="" disabled>
+                    Chọn trạng thái
+                  </MenuItem>
+                  <MenuItem value="ACTIVE">Đang hoạt động</MenuItem>
+                  <MenuItem value="INACTIVE">Không hoạt động</MenuItem>
+                </Select>
+              </Grid>
+            )}
           </Grid>
         </DialogContent>
         <DialogActions>
@@ -1501,7 +1785,7 @@ export default function HostPage() {
           <Button
             onClick={handleSaveProperty}
             variant="contained"
-            disabled={isLoading}
+            disabled={isLoading || !newProperty.status}
             startIcon={
               isLoading ? <CircularProgress size={20} color="inherit" /> : null
             }

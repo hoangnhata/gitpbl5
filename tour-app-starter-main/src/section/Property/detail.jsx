@@ -6,6 +6,7 @@ import BookingCard from "./components/BookingCard";
 import AmenitiesSection from "./components/AmenitiesSection";
 import AboutThisPlace from "./components/AboutThisPlace";
 import HostInfo from "./components/HostInfo";
+import HostMessage from "./components/HostMessage";
 
 const Details = ({ property }) => {
   return (
@@ -30,6 +31,10 @@ const Details = ({ property }) => {
               <HostInfo
                 hostId={property.hostId ? String(property.hostId) : undefined}
               />
+              <HostMessage
+                hostId={property.hostId ? String(property.hostId) : undefined}
+              />
+
               <Divider />
               <AmenitiesSection amenities={property.amenites} />
               <Divider />

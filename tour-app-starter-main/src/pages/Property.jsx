@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Container, Stack, Typography } from "@mui/material";
 import { Hero } from "../section/Property"; // Import Hero component
 import { useParams } from "react-router-dom"; // Import useParams to get id from URL
+import axiosInstance from "../api/axiosConfig";
 
 const Property = () => {
   const { id } = useParams(); // Get the id from the URL
@@ -12,10 +13,15 @@ const Property = () => {
   useEffect(() => {
     const fetchProperty = async () => {
       try {
-        const response = await fetch(`http://localhost:8080/api/listings/${id}`);
-        const data = await response.json();
-        if (data.code === 200) {
-          setProperty(data.result); // Save property data to state
+        // Create a new axios instance without auth interceptor for public access
+        const response = await axiosInstance.get(`/api/listings/${id}`, {
+          headers: {
+            Authorization: undefined, // Override the auth interceptor
+          },
+        });
+
+        if (response.data.code === 200) {
+          setProperty(response.data.result); // Save property data to state
         }
       } catch (error) {
         console.error("Error fetching property:", error);

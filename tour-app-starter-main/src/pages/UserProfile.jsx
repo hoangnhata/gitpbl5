@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Box,
   Card,
@@ -16,6 +16,11 @@ import {
   Paper,
   IconButton,
   Badge,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemText,
+  Divider,
 } from "@mui/material";
 import {
   Edit as EditIcon,
@@ -34,6 +39,9 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Chip from "@mui/material/Chip";
+import SendIcon from "@mui/icons-material/Send";
+import SockJS from "sockjs-client";
+import { Stomp } from "@stomp/stompjs";
 
 const UserProfile = () => {
   const navigate = useNavigate();
@@ -51,7 +59,6 @@ const UserProfile = () => {
   });
   const [bookedRooms, setBookedRooms] = useState([]);
   const [favoriteRooms, setFavoriteRooms] = useState([]);
-  const [messages] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [passwordData, setPasswordData] = useState({
@@ -70,6 +77,12 @@ const UserProfile = () => {
   const [hostRequestPreview, setHostRequestPreview] = useState("");
   const [hostRequestSuccess, setHostRequestSuccess] = useState(false);
   const [hostRequestError, setHostRequestError] = useState("");
+  const [persons, setPersons] = useState([]);
+  const [selectedPerson, setSelectedPerson] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [message, setMessage] = useState("");
+  const stompClient = useRef(null);
+  const user = JSON.parse(localStorage.getItem("user"));
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -317,6 +330,74 @@ const UserProfile = () => {
         err.response?.data?.message || "Gửi yêu cầu thất bại, vui lòng thử lại."
       );
     }
+  };
+
+  // Lấy danh sách người đã chat
+  useEffect(() => {
+    axiosInstance.get("/api/chat/persons").then((res) => {
+      setPersons(res.data.result || []);
+    });
+  }, []);
+
+  // Lấy lịch sử chat khi chọn người
+  useEffect(() => {
+    if (selectedPerson) {
+      axiosInstance.get(`/api/chat/simple/${selectedPerson.id}`).then((res) => {
+        setMessages(res.data.result || []);
+      });
+    }
+  }, [selectedPerson]);
+
+  // Kết nối websocket
+  useEffect(() => {
+    const socket = new SockJS("http://localhost:8080/ws");
+    stompClient.current = Stomp.over(socket);
+
+    stompClient.current.connect(
+      { Authorization: `Bearer ${localStorage.getItem("accessToken")}` },
+      () => {
+        stompClient.current.subscribe(
+          `/user/${user.username}/queue/messages`,
+          (msg) => {
+            // Khi có tin nhắn mới, tự động reload lại lịch sử chat
+            if (selectedPerson) {
+              axiosInstance
+                .get(`/api/chat/simple/${selectedPerson.id}`)
+                .then((res) => {
+                  setMessages(res.data.result || []);
+                });
+            }
+          }
+        );
+      }
+    );
+
+    return () => {
+      if (stompClient.current) stompClient.current.disconnect();
+    };
+  }, [user.username, selectedPerson]);
+
+  // Gửi tin nhắn
+  const handleSend = () => {
+    if (!message.trim() || !selectedPerson) return;
+    const newMsg = {
+      id: Date.now(), // hoặc để undefined, backend sẽ trả về id thật sau
+      senderUsername: user.username,
+      receiverUsername: selectedPerson.username, // hoặc selectedPerson.fullname nếu backend dùng fullname
+      content: message,
+      timestamp: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, newMsg]);
+    stompClient.current.send(
+      "/app/chat",
+      {},
+      JSON.stringify({
+        senderID: user.id,
+        receiverID: selectedPerson.id,
+        content: message,
+      })
+    );
+    setMessage("");
   };
 
   const renderEditProfile = () => (
@@ -928,7 +1009,202 @@ const UserProfile = () => {
         {currentTab === 0 && renderEditProfile()}
         {currentTab === 1 && renderBookedRooms()}
         {currentTab === 2 && renderFavoriteRooms()}
-        {currentTab === 3 && renderMessages()}
+        {currentTab === 3 && (
+          <Grid container spacing={2}>
+            {/* Danh sách chat */}
+            <Grid item xs={12} md={4}>
+              <Paper
+                sx={{
+                  height: "calc(100vh - 200px)",
+                  overflow: "auto",
+                  bgcolor: "#18191a",
+                }}
+              >
+                <Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
+                  <TextField
+                    fullWidth
+                    placeholder="Tìm kiếm tin nhắn..."
+                    InputProps={{
+                      startAdornment: (
+                        <MessageIcon sx={{ mr: 1, color: "text.secondary" }} />
+                      ),
+                    }}
+                    sx={{
+                      input: { color: "#fff" },
+                      "& .MuiOutlinedInput-root": { bgcolor: "#232323" },
+                    }}
+                  />
+                </Box>
+                <List>
+                  {persons.map((person) => (
+                    <ListItem
+                      key={person.id}
+                      button
+                      selected={selectedPerson?.id === person.id}
+                      onClick={() => setSelectedPerson(person)}
+                      sx={{
+                        bgcolor:
+                          selectedPerson?.id === person.id
+                            ? "#232323"
+                            : "inherit",
+                        "&:hover": { bgcolor: "#232323" },
+                      }}
+                    >
+                      <ListItemAvatar>
+                        <Avatar>{person.fullname?.[0]}</Avatar>
+                      </ListItemAvatar>
+                      <ListItemText
+                        primary={
+                          <Typography sx={{ color: "#fff" }}>
+                            {person.fullname}
+                          </Typography>
+                        }
+                        secondary={
+                          <Typography sx={{ color: "#bdbdbd" }}>
+                            {person.email}
+                          </Typography>
+                        }
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              </Paper>
+            </Grid>
+            {/* Cửa sổ chat */}
+            <Grid item xs={12} md={8}>
+              <Paper
+                sx={{
+                  height: "calc(100vh - 200px)",
+                  display: "flex",
+                  flexDirection: "column",
+                  bgcolor: "#18191a",
+                }}
+              >
+                {/* Header chat */}
+                {selectedPerson && (
+                  <Box
+                    sx={{
+                      p: 2,
+                      borderBottom: 1,
+                      borderColor: "divider",
+                      bgcolor: "#232323",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 2,
+                    }}
+                  >
+                    <Avatar>{selectedPerson.fullname?.[0]}</Avatar>
+                    <Box>
+                      <Typography sx={{ color: "#fff", fontWeight: 700 }}>
+                        {selectedPerson.fullname}
+                      </Typography>
+                      <Typography sx={{ color: "#bdbdbd", fontSize: 14 }}>
+                        {selectedPerson.email}
+                      </Typography>
+                    </Box>
+                  </Box>
+                )}
+                {/* Tin nhắn */}
+                <Box
+                  sx={{
+                    flexGrow: 1,
+                    overflow: "auto",
+                    p: 2,
+                    bgcolor: "#18191a",
+                  }}
+                >
+                  <Stack spacing={2}>
+                    {messages.map((msg) => (
+                      <Box
+                        key={msg.id}
+                        sx={{
+                          display: "flex",
+                          justifyContent:
+                            msg.senderUsername === user.username
+                              ? "flex-end"
+                              : "flex-start",
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            maxWidth: "70%",
+                            bgcolor:
+                              msg.senderUsername === user.username
+                                ? "#d32f2f"
+                                : "#232323",
+                            color: "#fff",
+                            p: 2,
+                            borderRadius: 3,
+                            boxShadow: 1,
+                          }}
+                        >
+                          <Typography variant="body1">{msg.content}</Typography>
+                          <Typography
+                            variant="caption"
+                            sx={{ opacity: 0.7, display: "block", mt: 0.5 }}
+                          >
+                            {new Date(msg.timestamp).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    ))}
+                  </Stack>
+                </Box>
+                {/* Input */}
+                <Box
+                  sx={{
+                    p: 2,
+                    borderTop: 1,
+                    borderColor: "divider",
+                    bgcolor: "#232323",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                  }}
+                >
+                  <IconButton>
+                    <span role="img" aria-label="attach">
+                      📎
+                    </span>
+                  </IconButton>
+                  <IconButton>
+                    <span role="img" aria-label="emoji">
+                      😊
+                    </span>
+                  </IconButton>
+                  <TextField
+                    fullWidth
+                    placeholder="Nhập tin nhắn..."
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSend();
+                      }
+                    }}
+                    sx={{
+                      input: { color: "#fff" },
+                      "& .MuiOutlinedInput-root": { bgcolor: "#232323" },
+                    }}
+                  />
+                  <Button
+                    variant="contained"
+                    endIcon={<SendIcon />}
+                    onClick={handleSend}
+                    disabled={!message.trim() || !selectedPerson}
+                    sx={{ ml: 1, bgcolor: "#d32f2f" }}
+                  >
+                    Gửi
+                  </Button>
+                </Box>
+              </Paper>
+            </Grid>
+          </Grid>
+        )}
         {currentTab === 4 && renderHostRequest()}
       </Box>
     </Container>
@@ -936,7 +1212,8 @@ const UserProfile = () => {
 };
 
 UserProfile.propTypes = {
-  properties: PropTypes.arrayOf(PropTypes.object).isRequired,
+  // Xoá dòng này nếu không dùng:
+  // properties: PropTypes.arrayOf(PropTypes.object).isRequired,
 };
 
 export default UserProfile;
