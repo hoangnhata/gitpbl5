@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Typography,
   Box,
@@ -31,68 +31,12 @@ import {
   CheckCircle as ActiveIcon,
   Cancel as InactiveIcon
 } from '@mui/icons-material';
+import axiosInstance from '../../api/axiosConfig';
 
-const initialAmenities = [
-  {
-    id: 1,
-    name: 'Wi-Fi',
-    icon: '/icons/wifi.png',
-    status: 'active',
-    description: 'Kết nối internet không dây'
-  },
-  {
-    id: 2,
-    name: 'Kitchen',
-    icon: '/icons/kitchen.png',
-    status: 'active',
-    description: 'Nhà bếp đầy đủ tiện nghi'
-  },
-  {
-    id: 3,
-    name: 'Washer',
-    icon: '/icons/washer.png',
-    status: 'active',
-    description: 'Máy giặt'
-  },
-  {
-    id: 4,
-    name: 'Dryer',
-    icon: '/icons/dryer.png',
-    status: 'active',
-    description: 'Máy sấy'
-  },
-  {
-    id: 5,
-    name: 'Parking',
-    icon: '/icons/parking.png',
-    status: 'inactive',
-    description: 'Bãi đỗ xe'
-  },
-  {
-    id: 6,
-    name: 'Swimming Pool',
-    icon: '/icons/pool.png',
-    status: 'active',
-    description: 'Hồ bơi'
-  },
-  {
-    id: 7,
-    name: 'Gym',
-    icon: '/icons/gym.png',
-    status: 'inactive',
-    description: 'Phòng tập gym'
-  },
-  {
-    id: 8,
-    name: 'Playground',
-    icon: '/icons/playground.png',
-    status: 'active',
-    description: 'Khu vui chơi'
-  }
-];
+
 
 export default function AdminAmenities() {
-  const [amenities, setAmenities] = useState(initialAmenities);
+  const [amenities, setAmenities] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedAmenity, setSelectedAmenity] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
@@ -100,6 +44,7 @@ export default function AdminAmenities() {
   const [loading, setLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [newIcon, setNewIcon] = useState(null);
+  const [formData, setFormData] = useState({ name: '', description: '', isActive: true, position: 1, deleted: false, thumbnail: null });
 
   const handleSearchChange = (e) => setSearchTerm(e.target.value.toLowerCase());
 
@@ -111,6 +56,18 @@ export default function AdminAmenities() {
 
   const handleOpenDialog = (amenity = null) => {
     setSelectedAmenity(amenity);
+    if (amenity) {
+      setFormData({
+        name: amenity.name || '',
+        description: amenity.description || '',
+        isActive: amenity.isActive ?? true,
+        position: amenity.position || 1,
+        deleted: amenity.deleted ?? false,
+        thumbnail: null
+      });
+    } else {
+      setFormData({ name: '', description: '', isActive: true, position: 1, deleted: false, thumbnail: null });
+    }
     setOpenDialog(true);
   };
 
@@ -152,31 +109,46 @@ export default function AdminAmenities() {
     }
   };
 
-  const handleSaveIcon = async () => {
+  const handleFormChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const handleThumbnailChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormData((prev) => ({ ...prev, thumbnail: file }));
+    }
+  };
+
+  const handleSaveAmenity = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-    
-
-      setAmenities(prev =>
-        prev.map(amenity =>
-          amenity.id === selectedAmenity.id
-            ? { ...amenity, icon: newIcon }
-            : amenity
-        )
-      );
-
-      setSnackbar({
-        open: true,
-        message: 'Cập nhật icon thành công',
-        severity: 'success'
-      });
-      handleCloseImageDialog();
+      const payload = new FormData();
+      payload.append('name', formData.name);
+      payload.append('description', formData.description);
+      payload.append('isActive', formData.isActive);
+      payload.append('position', formData.position);
+      payload.append('deleted', formData.deleted);
+      if (formData.thumbnail) {
+        payload.append('thumbnail', formData.thumbnail);
+      }
+      const headers = { 'Content-Type': 'multipart/form-data' };
+      if (selectedAmenity) {
+        await axiosInstance.put(`/api/amenities/${selectedAmenity.id}`, payload, { headers });
+      } else {
+        await axiosInstance.post('/api/amenities', payload, { headers });
+      }
+      // Reload amenities
+      const res = await axiosInstance.get('/api/amenities/index');
+      setAmenities(res.data.result || []);
+      setSnackbar({ open: true, message: selectedAmenity ? 'Cập nhật tiện nghi thành công!' : 'Thêm tiện nghi thành công!', severity: 'success' });
+      setOpenDialog(false);
     } catch (error) {
-      setSnackbar({
-        open: true,
-        message: 'Có lỗi xảy ra khi cập nhật icon',
-        severity: 'error'
-      });
+      setSnackbar({ open: true, message: 'Thao tác thất bại!', severity: 'error' });
     } finally {
       setLoading(false);
     }
@@ -189,6 +161,37 @@ export default function AdminAmenities() {
   const getStatusText = (status) => {
     return status === 'active' ? 'Đang hoạt động' : 'Không hoạt động';
   };
+
+  const handleDeleteAmenity = async (id) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa tiện nghi này?')) return;
+    setLoading(true);
+    try {
+      await axiosInstance.delete(`/api/amenities/${id}`);
+      // Reload amenities
+      const res = await axiosInstance.get('/api/amenities/index');
+      setAmenities(res.data.result || []);
+      setSnackbar({ open: true, message: 'Xóa tiện nghi thành công!', severity: 'success' });
+    } catch (error) {
+      setSnackbar({ open: true, message: 'Xóa tiện nghi thất bại!', severity: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const fetchAmenities = async () => {
+      setLoading(true);
+      try {
+        const res = await axiosInstance.get('/api/amenities/index');
+        setAmenities(res.data.result || []);
+      } catch (error) {
+        setSnackbar({ open: true, message: 'Không thể tải danh sách tiện nghi!', severity: 'error' });
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAmenities();
+  }, []);
 
   return (
     <Box sx={{ p: 3 }}>
@@ -221,7 +224,7 @@ export default function AdminAmenities() {
                 <Stack spacing={2}>
                   <Box
                     component="img"
-                    src={amenity.icon}
+                    src={amenity.thumnailUrl ? (amenity.thumnailUrl.startsWith('http') ? amenity.thumnailUrl : `http://localhost:8080${amenity.thumnailUrl}`) : ''}
                     alt={amenity.name}
                     sx={{
                       width: '100%',
@@ -234,7 +237,7 @@ export default function AdminAmenities() {
                     {amenity.name}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" align="center">
-                    {amenity.description}
+                    {amenity.description || ''}
                   </Typography>
                   <Chip
                     label={getStatusText(amenity.status)}
@@ -259,12 +262,12 @@ export default function AdminAmenities() {
                         <EditIcon />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title={amenity.status === 'active' ? 'Tắt hoạt động' : 'Bật hoạt động'}>
+                    <Tooltip title="Xóa tiện nghi">
                       <IconButton
-                        color={amenity.status === 'active' ? 'error' : 'success'}
-                        onClick={() => handleStatusToggle(amenity.id)}
+                        color="error"
+                        onClick={() => handleDeleteAmenity(amenity.id)}
                       >
-                        {amenity.status === 'active' ? <InactiveIcon /> : <ActiveIcon />}
+                        <DeleteIcon />
                       </IconButton>
                     </Tooltip>
                   </Stack>
@@ -323,13 +326,6 @@ export default function AdminAmenities() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseImageDialog}>Hủy</Button>
-          <Button
-            variant="contained"
-            onClick={handleSaveIcon}
-            disabled={!newIcon || loading}
-          >
-            {loading ? 'Đang lưu...' : 'Lưu thay đổi'}
-          </Button>
         </DialogActions>
       </Dialog>
       <Snackbar
@@ -346,8 +342,82 @@ export default function AdminAmenities() {
         </Alert>
       </Snackbar>
 
-     
-     
+      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>{selectedAmenity ? 'Chỉnh sửa tiện nghi' : 'Thêm tiện nghi mới'}</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <TextField
+              label="Tên tiện nghi"
+              name="name"
+              value={formData.name}
+              onChange={handleFormChange}
+              fullWidth
+              required
+            />
+            <TextField
+              label="Mô tả"
+              name="description"
+              value={formData.description}
+              onChange={handleFormChange}
+              fullWidth
+              multiline
+              minRows={2}
+            />
+            <TextField
+              label="Vị trí"
+              name="position"
+              type="number"
+              value={formData.position}
+              onChange={handleFormChange}
+              fullWidth
+            />
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={formData.isActive}
+                  onChange={handleFormChange}
+                  name="isActive"
+                  color="primary"
+                />
+              }
+              label={<Typography fontWeight={500}>Hoạt động</Typography>}
+              sx={{ ml: 0 }}
+            />
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={formData.deleted}
+                  onChange={handleFormChange}
+                  name="deleted"
+                  color="error"
+                />
+              }
+              label={<Typography fontWeight={500}>Đã xóa</Typography>}
+              sx={{ ml: 0 }}
+            />
+            <Button
+              variant="outlined"
+              component="label"
+              sx={{ minWidth: 120 }}
+            >
+              {formData.thumbnail ? 'Đã chọn ảnh' : 'Chọn ảnh'}
+              <input
+                accept="image/*"
+                type="file"
+                hidden
+                onChange={handleThumbnailChange}
+              />
+            </Button>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog}>Hủy</Button>
+          <Button variant="contained" onClick={handleSaveAmenity} disabled={loading}>
+            {loading ? 'Đang lưu...' : (selectedAmenity ? 'Lưu thay đổi' : 'Thêm mới')}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {loading && (
         <Box
           sx={{

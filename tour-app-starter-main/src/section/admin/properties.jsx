@@ -151,12 +151,23 @@ export default function AdminProperties() {
     }
   };
 
-  const handleRemoveProperty = (id) => {
-    const updatedProperties = properties.filter(property => property.id !== id);
-    setProperties(updatedProperties);
-    setAlertMessage('Gỡ bỏ thành công!');
-    setShowSuccessAlert(true);
-    handleCloseDialog();
+  const handleRemoveProperty = async (id) => {
+    setLoading(true);
+    setError("");
+    try {
+      await axiosInstance.delete(`/api/listings/${id}`);
+      const updatedProperties = properties.filter(property => property.id !== id);
+      setProperties(updatedProperties);
+      setAlertMessage('Gỡ bỏ thành công!');
+      setShowSuccessAlert(true);
+      handleCloseDialog();
+    } catch (err) {
+      setAlertMessage('Có lỗi khi gỡ bỏ!');
+      setShowSuccessAlert(true);
+      setError("Không thể gỡ bỏ chỗ ở");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleTrendingChange = (id, newValue) => {
