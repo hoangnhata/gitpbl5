@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Typography,
   Box,
@@ -18,7 +18,9 @@ import {
   Alert,
   Snackbar,
   Tooltip,
-  CircularProgress
+  CircularProgress,
+  Switch,
+  FormControlLabel
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -29,68 +31,12 @@ import {
   CheckCircle as ActiveIcon,
   Cancel as InactiveIcon
 } from '@mui/icons-material';
+import axiosInstance from '../../api/axiosConfig';
 
-const initialCategories = [
-  {
-    id: 1,
-    name: 'Công viên quốc gia',
-    icon: '/icons/national-park.png',
-    status: 'active',
-    description: 'Khám phá vẻ đẹp thiên nhiên hoang dã'
-  },
-  {
-    id: 2,
-    name: 'Biểu tượng',
-    icon: '/icons/iconic.png',
-    status: 'active',
-    description: 'Những địa điểm nổi tiếng, biểu tượng'
-  },
-  {
-    id: 3,
-    name: 'Thiết kế',
-    icon: '/icons/design.png',
-    status: 'active',
-    description: 'Không gian được thiết kế độc đáo'
-  },
-  {
-    id: 4,
-    name: 'Mới',
-    icon: '/icons/new.png',
-    status: 'active',
-    description: 'Những địa điểm mới được thêm vào'
-  },
-  {
-    id: 5,
-    name: 'Vui chơi',
-    icon: '/icons/play.png',
-    status: 'inactive',
-    description: 'Khu vui chơi giải trí'
-  },
-  {
-    id: 6,
-    name: 'Hướng biển',
-    icon: '/icons/beach.png',
-    status: 'active',
-    description: 'View biển tuyệt đẹp'
-  },
-  {
-    id: 7,
-    name: 'Phòng',
-    icon: '/icons/room.png',
-    status: 'inactive',
-    description: 'Các loại phòng nghỉ'
-  },
-  {
-    id: 8,
-    name: 'Hồ bơi tuyệt đẹp',
-    icon: '/icons/pool.png',
-    status: 'active',
-    description: 'Hồ bơi sang trọng, view đẹp'
-  }
-];
+
 
 export default function AdminCategories() {
-  const [categories, setCategories] = useState(initialCategories);
+  const [categories, setCategories] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
@@ -98,6 +44,22 @@ export default function AdminCategories() {
   const [loading, setLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [newIcon, setNewIcon] = useState(null);
+  const [formData, setFormData] = useState({ name: '', description: '', isActive: true, position: 1, thumbnail: null, preview: '' });
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      setLoading(true);
+      try {
+        const res = await axiosInstance.get('/api/categories/index');
+        setCategories(res.data.result || []);
+      } catch (error) {
+        setSnackbar({ open: true, message: 'Không thể tải danh mục!', severity: 'error' });
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   const handleSearchChange = (e) => setSearchTerm(e.target.value.toLowerCase());
 
@@ -109,6 +71,18 @@ export default function AdminCategories() {
 
   const handleOpenDialog = (category = null) => {
     setSelectedCategory(category);
+    if (category) {
+      setFormData({
+        name: category.name || '',
+        description: category.description || '',
+        isActive: category.isActive ?? true,
+        position: category.position || 1,
+        thumbnail: null,
+        preview: category.thumnailUrl ? (category.thumnailUrl.startsWith('http') ? category.thumnailUrl : `http://localhost:8080${category.thumnailUrl}`) : ''
+      });
+    } else {
+      setFormData({ name: '', description: '', isActive: true, position: 1, thumbnail: null, preview: '' });
+    }
     setOpenDialog(true);
   };
 
@@ -150,30 +124,65 @@ export default function AdminCategories() {
     }
   };
 
-  const handleSaveIcon = async () => {
+  const handleFormChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const handleSwitchChange = (e) => {
+    setFormData((prev) => ({ ...prev, isActive: e.target.checked }));
+  };
+
+  const handleThumbnailChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormData((prev) => ({ ...prev, thumbnail: file, preview: URL.createObjectURL(file) }));
+    }
+  };
+
+  const handleSaveCategory = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-
-      setCategories(prev =>
-        prev.map(category =>
-          category.id === selectedCategory.id
-            ? { ...category, icon: newIcon }
-            : category
-        )
-      );
-
-      setSnackbar({
-        open: true,
-        message: 'Cập nhật icon thành công',
-        severity: 'success'
-      });
-      handleCloseImageDialog();
+      const payload = new FormData();
+      payload.append('name', formData.name);
+      payload.append('description', formData.description);
+      payload.append('isActive', formData.isActive);
+      payload.append('position', formData.position);
+      if (formData.thumbnail) {
+        payload.append('thumbnail', formData.thumbnail);
+      }
+      const headers = { 'Content-Type': 'multipart/form-data' };
+      if (selectedCategory) {
+        await axiosInstance.put(`/api/categories/${selectedCategory.id}`, payload, { headers });
+      } else {
+        await axiosInstance.post('/api/categories', payload, { headers });
+      }
+      const res = await axiosInstance.get('/api/categories/index');
+      setCategories(res.data.result || []);
+      setSnackbar({ open: true, message: selectedCategory ? 'Cập nhật danh mục thành công!' : 'Thêm danh mục thành công!', severity: 'success' });
+      setOpenDialog(false);
     } catch (error) {
-      setSnackbar({
-        open: true,
-        message: 'Có lỗi xảy ra khi cập nhật icon',
-        severity: 'error'
-      });
+      setSnackbar({ open: true, message: 'Cập nhật thất bại!', severity: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  
+
+  const handleDeleteCategory = async (id) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa danh mục này?')) return;
+    setLoading(true);
+    try {
+      await axiosInstance.delete(`/api/categories/${id}`);
+      const res = await axiosInstance.get('/api/categories/index');
+      setCategories(res.data.result || []);
+      setSnackbar({ open: true, message: 'Xóa danh mục thành công!', severity: 'success' });
+    } catch (error) {
+      setSnackbar({ open: true, message: 'Xóa danh mục thất bại!', severity: 'error' });
     } finally {
       setLoading(false);
     }
@@ -218,7 +227,7 @@ export default function AdminCategories() {
                 <Stack spacing={2}>
                   <Box
                     component="img"
-                    src={category.icon}
+                    src={category.thumnailUrl ? (category.thumnailUrl.startsWith('http') ? category.thumnailUrl : `http://localhost:8080${category.thumnailUrl}`) : ''}
                     alt={category.name}
                     sx={{
                       width: '100%',
@@ -231,11 +240,11 @@ export default function AdminCategories() {
                     {category.name}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" align="center">
-                    {category.description}
+                    {category.description || ''}
                   </Typography>
                   <Chip
-                    label={getStatusText(category.status)}
-                    color={getStatusColor(category.status)}
+                    label={category.isActive ? 'Đang hoạt động' : 'Không hoạt động'}
+                    color={category.isActive ? 'success' : 'error'}
                     size="small"
                     sx={{ alignSelf: 'center' }}
                   />
@@ -256,12 +265,12 @@ export default function AdminCategories() {
                         <EditIcon />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title={category.status === 'active' ? 'Tắt hoạt động' : 'Bật hoạt động'}>
+                    <Tooltip title="Xóa danh mục">
                       <IconButton
-                        color={category.status === 'active' ? 'error' : 'success'}
-                        onClick={() => handleStatusToggle(category.id)}
+                        color="error"
+                        onClick={() => handleDeleteCategory(category.id)}
                       >
-                        {category.status === 'active' ? <InactiveIcon /> : <ActiveIcon />}
+                        <DeleteIcon />
                       </IconButton>
                     </Tooltip>
                   </Stack>
@@ -320,12 +329,84 @@ export default function AdminCategories() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseImageDialog}>Hủy</Button>
-          <Button
-            variant="contained"
-            onClick={handleSaveIcon}
-            disabled={!newIcon || loading}
-          >
-            {loading ? 'Đang lưu...' : 'Lưu thay đổi'}
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700, fontSize: 22, textAlign: 'center' }}>
+          {selectedCategory ? 'Chỉnh sửa danh mục' : 'Thêm danh mục mới'}
+        </DialogTitle>
+        <DialogContent>
+          <Stack spacing={3} sx={{ mt: 1 }}>
+            <TextField
+              label="Tên danh mục"
+              name="name"
+              value={formData.name}
+              onChange={handleFormChange}
+              fullWidth
+              required
+              variant="outlined"
+            />
+            <TextField
+              label="Mô tả"
+              name="description"
+              value={formData.description}
+              onChange={handleFormChange}
+              fullWidth
+              multiline
+              minRows={2}
+              variant="outlined"
+            />
+            <TextField
+              label="Vị trí"
+              name="position"
+              type="number"
+              value={formData.position}
+              onChange={handleFormChange}
+              fullWidth
+              variant="outlined"
+              inputProps={{ min: 1 }}
+            />
+            <Stack direction="row" alignItems="center" spacing={2}>
+              <Button
+                variant="outlined"
+                component="label"
+                sx={{ minWidth: 120 }}
+              >
+                {formData.thumbnail ? 'Đã chọn ảnh mới' : 'Chọn ảnh'}
+                <input
+                  accept="image/*"
+                  type="file"
+                  hidden
+                  onChange={handleThumbnailChange}
+                />
+              </Button>
+              {(formData.preview) && (
+                <Box
+                  component="img"
+                  src={formData.preview}
+                  alt="Preview"
+                  sx={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 2, border: '1px solid #eee', ml: 2 }}
+                />
+              )}
+            </Stack>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={formData.isActive}
+                  onChange={handleSwitchChange}
+                  color="primary"
+                />
+              }
+              label={<Typography fontWeight={500}>Hoạt động</Typography>}
+              sx={{ ml: 0 }}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'flex-end', px: 3, pb: 2 }}>
+          <Button onClick={handleCloseDialog} variant="outlined">Hủy</Button>
+          <Button variant="contained" onClick={handleSaveCategory} disabled={loading} sx={{ minWidth: 120 }}>
+            {loading ? 'Đang lưu...' : (selectedCategory ? 'Lưu thay đổi' : 'Thêm mới')}
           </Button>
         </DialogActions>
       </Dialog>

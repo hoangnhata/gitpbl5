@@ -44,37 +44,7 @@ import {
 } from '@mui/icons-material';
 import axiosInstance from '../../api/axiosConfig';
 
-// Mock data for demonstration
-const mockCountries = [
-  {
-    id: 1,
-    name: 'Việt Nam',
-    code: 'VN',
-    description: 'Đất nước với vẻ đẹp thiên nhiên phong phú và văn hóa đa dạng',
-    totalProperties: 150,
-    totalHomestays: 80,
-    image: 'https://images.unsplash.com/photo-1528127269322-539801943592?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-    popularCities: ['Hà Nội', 'Hồ Chí Minh', 'Đà Nẵng', 'Nha Trang'],
-    status: 'active',
-    rating: 4.8,
-    trending: true,
-    occupancyRate: 85
-  },
-  {
-    id: 2,
-    name: 'Thái Lan',
-    code: 'TH',
-    description: 'Xứ sở của những nụ cười và văn hóa Phật giáo',
-    totalProperties: 120,
-    totalHomestays: 65,
-    image: 'https://images.unsplash.com/photo-1528181304800-259b08848526?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-    popularCities: ['Bangkok', 'Phuket', 'Chiang Mai', 'Pattaya'],
-    status: 'active',
-    rating: 4.6,
-    trending: true,
-    occupancyRate: 78
-  }
-];
+
 
 export default function AdminCountries() {
   const [countries, setCountries] = useState([]);
