@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from "react";
 import {
   Typography,
   Box,
@@ -10,20 +10,14 @@ import {
   Avatar,
   TextField,
   IconButton,
-  Divider,
   Chip,
   Stack,
   Badge,
   InputAdornment,
   Drawer,
   Button,
-  Card,
-  CardContent,
   Grid,
-  Tab,
-  Tabs,
-  useTheme
-} from '@mui/material';
+} from "@mui/material";
 import {
   Send as SendIcon,
   Search as SearchIcon,
@@ -31,124 +25,129 @@ import {
   Close as CloseIcon,
   AttachFile as AttachFileIcon,
   Image as ImageIcon,
-  Person as PersonIcon,
-  Store as StoreIcon,
   Star as StarIcon,
-  StarBorder as StarBorderIcon
-} from '@mui/icons-material';
-
-const mockConversations = [
-  {
-    id: 1,
-    type: 'user',
-    name: 'Lê Minh Khánh',
-    avatar: 'A',
-    lastMessage: 'Tôi cần hỗ trợ về vấn đề thanh toán',
-    time: '10:30',
-    unread: 2,
-    status: 'online',
-    rating: 4.5
-  },
-  {
-    id: 2,
-    type: 'seller',
-    name: 'Hoàng Minh Nhật',
-    avatar: 'V',
-    lastMessage: 'Xin chào, tôi muốn đăng ký làm đối tác',
-    time: '09:15',
-    unread: 0,
-    status: 'offline',
-    rating: 4.8
-  },
-  {
-    id: 3,
-    type: 'user',
-    name: 'Trần Phước Phú',
-    avatar: 'B',
-    lastMessage: 'Cảm ơn admin đã hỗ trợ',
-    time: 'Hôm qua',
-    unread: 0,
-    status: 'online',
-    rating: 5.0
-  }
-];
-
-const mockMessages = {
-  1: [
-    {
-      id: 1,
-      sender: 'user',
-      content: 'Xin chào, tôi cần hỗ trợ về vấn đề thanh toán',
-      time: '10:30',
-      status: 'read'
-    },
-    {
-      id: 2,
-      sender: 'admin',
-      content: 'Chào bạn, bạn có thể cho tôi biết chi tiết vấn đề không?',
-      time: '10:31',
-      status: 'read'
-    },
-    {
-      id: 3,
-      sender: 'user',
-      content: 'Tôi đã thanh toán nhưng hệ thống báo lỗi',
-      time: '10:32',
-      status: 'unread'
-    }
-  ]
-};
+} from "@mui/icons-material";
+import axiosInstance from "../../api/axiosConfig";
+import SockJS from "sockjs-client";
+import { Stomp } from "@stomp/stompjs";
 
 export default function AdminMessages() {
-  const theme = useTheme();
-  const [conversations, setConversations] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
-  const [message, setMessage] = useState('');
-  const [activeTab, setActiveTab] = useState(0);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [message, setMessage] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [persons, setPersons] = useState([]);
+  const stompClient = useRef(null);
+  const user = JSON.parse(localStorage.getItem("user"));
 
   useEffect(() => {
-    setConversations(mockConversations);
-  }, []);
+    // Fetch persons list
+    axiosInstance.get("/api/chat/persons").then((res) => {
+      setPersons(res.data.result || []);
+    });
+
+    // Setup WebSocket connection
+    const socket = new SockJS("http://localhost:8080/ws");
+    stompClient.current = Stomp.over(socket);
+
+    stompClient.current.connect(
+      { Authorization: `Bearer ${localStorage.getItem("accessToken")}` },
+      () => {
+        stompClient.current.subscribe(
+          `/user/${user.username}/queue/messages`,
+          () => {
+            if (selectedChat) {
+              axiosInstance
+                .get(`/api/chat/simple/${selectedChat.id}`)
+                .then((res) => {
+                  setMessages(res.data.result || []);
+                });
+            }
+          }
+        );
+      }
+    );
+
+    return () => {
+      if (stompClient.current) stompClient.current.disconnect();
+    };
+  }, [user.username]);
+
+  useEffect(() => {
+    if (selectedChat) {
+      axiosInstance.get(`/api/chat/simple/${selectedChat.id}`).then((res) => {
+        setMessages(res.data.result || []);
+      });
+    }
+  }, [selectedChat]);
 
   const handleSendMessage = () => {
-    if (!message.trim()) return;
-    setMessage('');
+    if (!message.trim() || !selectedChat) return;
+
+    const newMsg = {
+      id: Date.now(),
+      senderUsername: user.username,
+      receiverUsername: selectedChat.username,
+      content: message,
+      timestamp: new Date().toISOString(),
+    };
+
+    setMessages((prev) => [...prev, newMsg]);
+
+    stompClient.current.send(
+      "/app/chat",
+      {},
+      JSON.stringify({
+        senderID: user.id,
+        receiverID: selectedChat.id,
+        content: message,
+      })
+    );
+
+    setMessage("");
   };
 
-  const handleTabChange = (event, newValue) => {
-    setActiveTab(newValue);
-  };
-
-  const filteredConversations = conversations.filter(conv => {
-    const matchesSearch = conv.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         conv.lastMessage.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = activeTab === 0 ? true : 
-                       (activeTab === 1 ? conv.type === 'user' : conv.type === 'seller');
-    return matchesSearch && matchesType;
+  const filteredConversations = persons.filter((person) => {
+    return (
+      person.fullname.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      person.email.toLowerCase().includes(searchTerm.toLowerCase())
+    );
   });
 
   return (
-    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', p: 3 }}>
-      <Typography variant="h4" sx={{ mb: 3, fontWeight: 600 }}>
+    <Box
+      sx={{
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        p: 3,
+        bgcolor: "#18191a",
+      }}
+    >
+      <Typography variant="h4" sx={{ mb: 3, fontWeight: 600, color: "#fff" }}>
         Tin nhắn
       </Typography>
 
       <Grid container spacing={3} sx={{ flex: 1, minHeight: 0 }}>
-
-
         <Grid item xs={12} md={4} lg={3}>
-          <Paper 
-            elevation={3} 
-            sx={{ 
-              height: '100%', 
-              display: 'flex', 
-              flexDirection: 'column',
-              bgcolor: theme.palette.background.paper
+          <Paper
+            elevation={3}
+            sx={{
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              bgcolor: "#232323",
+              color: "#fff",
             }}
           >
-            <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+            <Box
+              sx={{
+                p: 2,
+                borderBottom: 1,
+                borderColor: "rgba(255,255,255,0.12)",
+              }}
+            >
               <TextField
                 fullWidth
                 placeholder="Tìm kiếm cuộc trò chuyện..."
@@ -159,90 +158,126 @@ export default function AdminMessages() {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <SearchIcon />
+                      <SearchIcon sx={{ color: "#bdbdbd" }} />
                     </InputAdornment>
                   ),
                   endAdornment: (
                     <InputAdornment position="end">
-                      <IconButton onClick={() => setShowFilters(!showFilters)}>
+                      <IconButton
+                        onClick={() => setShowFilters(!showFilters)}
+                        sx={{ color: "#bdbdbd" }}
+                      >
                         <FilterIcon />
                       </IconButton>
                     </InputAdornment>
-                  )
+                  ),
+                }}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    bgcolor: "#18191a",
+                    color: "#fff",
+                    "& fieldset": {
+                      borderColor: "rgba(255,255,255,0.12)",
+                    },
+                    "&:hover fieldset": {
+                      borderColor: "rgba(255,255,255,0.2)",
+                    },
+                    "&.Mui-focused fieldset": {
+                      borderColor: "#ff385c",
+                    },
+                  },
+                  "& .MuiInputBase-input": {
+                    color: "#fff",
+                  },
                 }}
               />
             </Box>
 
-            <Tabs
-              value={activeTab}
-              onChange={handleTabChange}
-              variant="fullWidth"
-              sx={{ borderBottom: 1, borderColor: 'divider' }}
-            >
-              <Tab label="Tất cả" />
-              <Tab label="Người dùng" />
-              <Tab label="Đối tác" />
-            </Tabs>
-
-            <List sx={{ flex: 1, overflow: 'auto' }}>
-              {filteredConversations.map((conv) => (
+            <List sx={{ flex: 1, overflow: "auto" }}>
+              {filteredConversations.map((person) => (
                 <ListItem
-                  key={conv.id}
+                  key={person.id}
                   button
-                  selected={selectedChat?.id === conv.id}
-                  onClick={() => setSelectedChat(conv)}
+                  selected={selectedChat?.id === person.id}
+                  onClick={() => setSelectedChat(person)}
                   sx={{
-                    borderLeft: selectedChat?.id === conv.id ? 3 : 0,
-                    borderColor: 'primary.main',
-                    bgcolor: selectedChat?.id === conv.id ? theme.palette.action.selected : 'transparent',
-                    '&:hover': {
-                      bgcolor: theme.palette.action.hover
-                    }
+                    borderLeft: selectedChat?.id === person.id ? 3 : 0,
+                    borderColor: "#ff385c",
+                    bgcolor:
+                      selectedChat?.id === person.id
+                        ? "rgba(255,56,92,0.1)"
+                        : "transparent",
+                    "&:hover": {
+                      bgcolor: "rgba(255,255,255,0.05)",
+                    },
+                    color: "#fff",
                   }}
                 >
                   <ListItemAvatar>
                     <Badge
                       overlap="circular"
-                      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                      anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
                       variant="dot"
-                      color={conv.status === 'online' ? 'success' : 'default'}
+                      color={person.status === "online" ? "success" : "default"}
                     >
-                      <Avatar sx={{ bgcolor: conv.type === 'user' ? 'primary.main' : 'secondary.main' }}>
-                        {conv.avatar}
+                      <Avatar
+                        sx={{
+                          bgcolor:
+                            person.type === "user" ? "#ff385c" : "#2c3e50",
+                        }}
+                      >
+                        {person.fullname?.[0]}
                       </Avatar>
                     </Badge>
                   </ListItemAvatar>
                   <ListItemText
                     primary={
-                      <Stack direction="row" justifyContent="space-between" alignItems="center">
-                        <Typography variant="subtitle1" color="text.primary">
-                          {conv.name}
+                      <Stack
+                        direction="row"
+                        justifyContent="space-between"
+                        alignItems="center"
+                      >
+                        <Typography variant="subtitle1" sx={{ color: "#fff" }}>
+                          {person.fullname}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {conv.time}
+                        <Typography variant="caption" sx={{ color: "#bdbdbd" }}>
+                          {new Date(
+                            person.lastMessageTime
+                          ).toLocaleTimeString()}
                         </Typography>
                       </Stack>
                     }
                     secondary={
-                      <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Stack
+                        direction="row"
+                        justifyContent="space-between"
+                        alignItems="center"
+                      >
                         <Typography
                           variant="body2"
-                          color="text.secondary"
                           sx={{
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            maxWidth: '200px'
+                            color: "#bdbdbd",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                            maxWidth: "200px",
                           }}
                         >
-                          {conv.lastMessage}
+                          {person.lastMessage}
                         </Typography>
-                        {conv.unread > 0 && (
+                        {person.unread > 0 && (
                           <Chip
-                            label={conv.unread}
+                            label={person.unread}
                             size="small"
-                            color="primary"
-                            sx={{ minWidth: '20px', height: '20px' }}
+                            sx={{
+                              bgcolor: "#ff385c",
+                              color: "#fff",
+                              minWidth: "20px",
+                              height: "20px",
+                              "& .MuiChip-label": {
+                                px: 1,
+                              },
+                            }}
                           />
                         )}
                       </Stack>
@@ -254,45 +289,69 @@ export default function AdminMessages() {
           </Paper>
         </Grid>
 
-
         <Grid item xs={12} md={8} lg={9}>
           {selectedChat ? (
-            <Paper 
-              elevation={3} 
-              sx={{ 
-                height: '100%', 
-                display: 'flex', 
-                flexDirection: 'column',
-                bgcolor: theme.palette.background.paper
+            <Paper
+              elevation={3}
+              sx={{
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+                bgcolor: "#232323",
+                color: "#fff",
               }}
             >
-
-
-              <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', bgcolor: theme.palette.background.default }}>
+              <Box
+                sx={{
+                  p: 2,
+                  borderBottom: 1,
+                  borderColor: "rgba(255,255,255,0.12)",
+                  bgcolor: "#18191a",
+                }}
+              >
                 <Stack direction="row" alignItems="center" spacing={2}>
-                  <Avatar sx={{ bgcolor: selectedChat.type === 'user' ? 'primary.main' : 'secondary.main' }}>
-                    {selectedChat.avatar}
+                  <Avatar
+                    sx={{
+                      bgcolor:
+                        selectedChat.type === "user" ? "#ff385c" : "#2c3e50",
+                    }}
+                  >
+                    {selectedChat.fullname?.[0]}
                   </Avatar>
                   <Box sx={{ flex: 1 }}>
                     <Stack direction="row" alignItems="center" spacing={1}>
-                      <Typography variant="h6" color="text.primary">
-                        {selectedChat.name}
+                      <Typography variant="h6" sx={{ color: "#fff" }}>
+                        {selectedChat.fullname}
                       </Typography>
                       <Chip
                         size="small"
-                        label={selectedChat.type === 'user' ? 'Người dùng' : 'Đối tác'}
-                        color={selectedChat.type === 'user' ? 'primary' : 'secondary'}
+                        label={
+                          selectedChat.type === "user"
+                            ? "Người dùng"
+                            : "Đối tác"
+                        }
+                        sx={{
+                          bgcolor:
+                            selectedChat.type === "user"
+                              ? "#ff385c"
+                              : "#2c3e50",
+                          color: "#fff",
+                        }}
                       />
                     </Stack>
                     <Stack direction="row" alignItems="center" spacing={1}>
-                      <Typography variant="body2" color="text.secondary">
-                        {selectedChat.status === 'online' ? 'Đang hoạt động' : 'Ngoại tuyến'}
+                      <Typography variant="body2" sx={{ color: "#bdbdbd" }}>
+                        {selectedChat.status === "online"
+                          ? "Đang hoạt động"
+                          : "Ngoại tuyến"}
                       </Typography>
-                      <Typography variant="body2" color="text.secondary">•</Typography>
+                      <Typography variant="body2" sx={{ color: "#bdbdbd" }}>
+                        •
+                      </Typography>
                       <Stack direction="row" alignItems="center" spacing={0.5}>
-                        <StarIcon sx={{ fontSize: 16, color: 'warning.main' }} />
-                        <Typography variant="body2" color="text.secondary">
-                          {selectedChat.rating}
+                        <StarIcon sx={{ fontSize: 16, color: "#ffd700" }} />
+                        <Typography variant="body2" sx={{ color: "#bdbdbd" }}>
+                          {selectedChat.rating || 0}
                         </Typography>
                       </Stack>
                     </Stack>
@@ -300,51 +359,66 @@ export default function AdminMessages() {
                 </Stack>
               </Box>
 
-
-              <Box sx={{ flex: 1, overflow: 'auto', p: 2, bgcolor: theme.palette.grey[50] }}>
-                {mockMessages[selectedChat.id]?.map((msg) => (
+              <Box sx={{ flex: 1, overflow: "auto", p: 2, bgcolor: "#18191a" }}>
+                {messages.map((msg) => (
                   <Box
                     key={msg.id}
                     sx={{
-                      display: 'flex',
-                      justifyContent: msg.sender === 'admin' ? 'flex-end' : 'flex-start',
-                      mb: 2
+                      display: "flex",
+                      justifyContent:
+                        msg.senderUsername === user.username
+                          ? "flex-end"
+                          : "flex-start",
+                      mb: 2,
                     }}
                   >
                     <Paper
                       elevation={1}
                       sx={{
                         p: 2,
-                        maxWidth: '70%',
-                        bgcolor: msg.sender === 'admin' ? 'primary.main' : theme.palette.background.paper,
-                        color: msg.sender === 'admin' ? 'primary.contrastText' : theme.palette.text.primary,
-                        '&:hover': {
-                          boxShadow: 2
-                        }
+                        maxWidth: "70%",
+                        bgcolor:
+                          msg.senderUsername === user.username
+                            ? "#ff385c"
+                            : "#232323",
+                        color: "#fff",
+                        "&:hover": {
+                          boxShadow: 2,
+                        },
                       }}
                     >
                       <Typography variant="body1">{msg.content}</Typography>
-                      <Typography 
-                        variant="caption" 
-                        sx={{ 
-                          color: msg.sender === 'admin' ? 'primary.contrastText' : theme.palette.text.secondary,
-                          opacity: 0.7 
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: "rgba(255,255,255,0.7)",
+                          display: "block",
+                          mt: 0.5,
                         }}
                       >
-                        {msg.time}
+                        {new Date(msg.timestamp).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                       </Typography>
                     </Paper>
                   </Box>
                 ))}
               </Box>
 
-
-              <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider', bgcolor: theme.palette.background.default }}>
+              <Box
+                sx={{
+                  p: 2,
+                  borderTop: 1,
+                  borderColor: "rgba(255,255,255,0.12)",
+                  bgcolor: "#18191a",
+                }}
+              >
                 <Stack direction="row" spacing={1}>
-                  <IconButton>
+                  <IconButton sx={{ color: "#bdbdbd" }}>
                     <AttachFileIcon />
                   </IconButton>
-                  <IconButton>
+                  <IconButton sx={{ color: "#bdbdbd" }}>
                     <ImageIcon />
                   </IconButton>
                   <TextField
@@ -354,17 +428,35 @@ export default function AdminMessages() {
                     size="small"
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                    onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
                     sx={{
-                      '& .MuiOutlinedInput-root': {
-                        bgcolor: theme.palette.background.paper
-                      }
+                      "& .MuiOutlinedInput-root": {
+                        bgcolor: "#232323",
+                        color: "#fff",
+                        "& fieldset": {
+                          borderColor: "rgba(255,255,255,0.12)",
+                        },
+                        "&:hover fieldset": {
+                          borderColor: "rgba(255,255,255,0.2)",
+                        },
+                        "&.Mui-focused fieldset": {
+                          borderColor: "#ff385c",
+                        },
+                      },
+                      "& .MuiInputBase-input": {
+                        color: "#fff",
+                      },
                     }}
                   />
                   <IconButton
-                    color="primary"
                     onClick={handleSendMessage}
                     disabled={!message.trim()}
+                    sx={{
+                      color: message.trim() ? "#ff385c" : "#bdbdbd",
+                      "&:hover": {
+                        bgcolor: "rgba(255,56,92,0.1)",
+                      },
+                    }}
                   >
                     <SendIcon />
                   </IconButton>
@@ -375,18 +467,19 @@ export default function AdminMessages() {
             <Paper
               elevation={3}
               sx={{
-                height: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                bgcolor: theme.palette.grey[50]
+                height: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                bgcolor: "#232323",
+                color: "#fff",
               }}
             >
               <Stack spacing={2} alignItems="center">
-                <Typography variant="h6" color="text.secondary">
+                <Typography variant="h6" sx={{ color: "#bdbdbd" }}>
                   Chọn một cuộc trò chuyện để bắt đầu
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" sx={{ color: "#bdbdbd" }}>
                   Hoặc tìm kiếm người dùng/đối tác để nhắn tin
                 </Typography>
               </Stack>
@@ -400,10 +493,18 @@ export default function AdminMessages() {
         open={showFilters}
         onClose={() => setShowFilters(false)}
       >
-        <Box sx={{ width: 300, p: 3, bgcolor: theme.palette.background.paper }}>
-          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
-            <Typography variant="h6" color="text.primary">Bộ lọc</Typography>
-            <IconButton onClick={() => setShowFilters(false)}>
+        <Box sx={{ width: 300, p: 3, bgcolor: "#232323", color: "#fff" }}>
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            alignItems="center"
+            sx={{ mb: 3 }}
+          >
+            <Typography variant="h6">Bộ lọc</Typography>
+            <IconButton
+              onClick={() => setShowFilters(false)}
+              sx={{ color: "#bdbdbd" }}
+            >
               <CloseIcon />
             </IconButton>
           </Stack>
@@ -414,9 +515,25 @@ export default function AdminMessages() {
               size="small"
               fullWidth
               sx={{
-                '& .MuiOutlinedInput-root': {
-                  bgcolor: theme.palette.background.paper
-                }
+                "& .MuiOutlinedInput-root": {
+                  bgcolor: "#18191a",
+                  color: "#fff",
+                  "& fieldset": {
+                    borderColor: "rgba(255,255,255,0.12)",
+                  },
+                  "&:hover fieldset": {
+                    borderColor: "rgba(255,255,255,0.2)",
+                  },
+                  "&.Mui-focused fieldset": {
+                    borderColor: "#ff385c",
+                  },
+                },
+                "& .MuiInputLabel-root": {
+                  color: "#bdbdbd",
+                },
+                "& .MuiInputBase-input": {
+                  color: "#fff",
+                },
               }}
             />
             <TextField
@@ -426,12 +543,28 @@ export default function AdminMessages() {
               size="small"
               fullWidth
               SelectProps={{
-                native: true
+                native: true,
               }}
               sx={{
-                '& .MuiOutlinedInput-root': {
-                  bgcolor: theme.palette.background.paper
-                }
+                "& .MuiOutlinedInput-root": {
+                  bgcolor: "#18191a",
+                  color: "#fff",
+                  "& fieldset": {
+                    borderColor: "rgba(255,255,255,0.12)",
+                  },
+                  "&:hover fieldset": {
+                    borderColor: "rgba(255,255,255,0.2)",
+                  },
+                  "&.Mui-focused fieldset": {
+                    borderColor: "#ff385c",
+                  },
+                },
+                "& .MuiInputLabel-root": {
+                  color: "#bdbdbd",
+                },
+                "& .MuiSelect-select": {
+                  color: "#fff",
+                },
               }}
             >
               <option value="all">Tất cả</option>
@@ -445,12 +578,28 @@ export default function AdminMessages() {
               size="small"
               fullWidth
               SelectProps={{
-                native: true
+                native: true,
               }}
               sx={{
-                '& .MuiOutlinedInput-root': {
-                  bgcolor: theme.palette.background.paper
-                }
+                "& .MuiOutlinedInput-root": {
+                  bgcolor: "#18191a",
+                  color: "#fff",
+                  "& fieldset": {
+                    borderColor: "rgba(255,255,255,0.12)",
+                  },
+                  "&:hover fieldset": {
+                    borderColor: "rgba(255,255,255,0.2)",
+                  },
+                  "&.Mui-focused fieldset": {
+                    borderColor: "#ff385c",
+                  },
+                },
+                "& .MuiInputLabel-root": {
+                  color: "#bdbdbd",
+                },
+                "& .MuiSelect-select": {
+                  color: "#fff",
+                },
               }}
             >
               <option value="all">Tất cả</option>
@@ -458,7 +607,16 @@ export default function AdminMessages() {
               <option value="4">4 sao trở lên</option>
               <option value="3">3 sao trở lên</option>
             </TextField>
-            <Button variant="contained" fullWidth>
+            <Button
+              variant="contained"
+              fullWidth
+              sx={{
+                bgcolor: "#ff385c",
+                "&:hover": {
+                  bgcolor: "#e61e4d",
+                },
+              }}
+            >
               Áp dụng
             </Button>
           </Stack>
