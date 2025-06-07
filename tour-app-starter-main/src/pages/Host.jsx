@@ -567,7 +567,7 @@ export default function HostPage() {
             images: item.images || [],
             amenites: item.amenites || [],
             categories: item.categories || [],
-            description: item.description || "", 
+            description: item.description || "",
             startDate: item.startDate,
             endDate: item.endDate,
             price: item.price,

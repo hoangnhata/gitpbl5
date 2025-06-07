@@ -3,7 +3,6 @@ import PropTypes from "prop-types";
 import {
   Box,
   Typography,
-  TextField,
   Button,
   Container,
   MenuItem,
@@ -45,12 +44,13 @@ const ReservationPage = () => {
     postalCode: "",
   });
   const [currentStep, setCurrentStep] = useState(1);
-  const [message, setMessage] = useState("");
+  const message =
+    "Tôi muốn đặt phòng này cho chuyến đi của mình. Mong được phục vụ tốt nhất.";
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
   const [favoriteRooms, setFavoriteRooms] = useState([]);
   const [favoriteIds, setFavoriteIds] = useState([]);
 
-  const totalSteps = 3;
+  const totalSteps = 2;
   const progress = (currentStep / totalSteps) * 100;
 
   if (!roomData) {
@@ -104,7 +104,7 @@ const ReservationPage = () => {
       // Lấy bookingId từ roomData đã truyền sang
       const bookingId = roomData.bookingId || roomData.id;
       if (!bookingId) {
-        setMessage("Không tìm thấy bookingId.");
+        console.error("Không tìm thấy bookingId.");
         return;
       }
       // Gửi payment với bookingId đã có
@@ -134,10 +134,10 @@ const ReservationPage = () => {
       if (response.data?.result) {
         window.location.href = response.data.result;
       } else {
-        setMessage("Không tìm thấy URL thanh toán trong response");
+        console.error("Không tìm thấy URL thanh toán trong response");
       }
     } catch (error) {
-      setMessage("Có lỗi xảy ra khi thanh toán");
+      console.error("Có lỗi xảy ra khi thanh toán:", error);
     }
   };
 
@@ -253,44 +253,6 @@ const ReservationPage = () => {
 
       case 2:
         return (
-          <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              2. Soạn tin nhắn cho chủ nhà/người tổ chức
-            </Typography>
-            {currentStep >= 2 && (
-              <>
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={4}
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Giới thiệu về bản thân và lý do chuyến đi của bạn..."
-                  sx={{ mb: 2 }}
-                />
-                <Button
-                  variant="contained"
-                  fullWidth
-                  onClick={handleNext}
-                  disabled={!message}
-                  sx={{
-                    mt: 2,
-                    backgroundColor: "#000000",
-                    "&:hover": {
-                      backgroundColor: "#333333",
-                    },
-                    padding: 1.5,
-                  }}
-                >
-                  Tiếp theo
-                </Button>
-              </>
-            )}
-          </Paper>
-        );
-
-      case 3:
-        return (
           <Paper
             elevation={3}
             sx={{
@@ -308,9 +270,9 @@ const ReservationPage = () => {
                 color: "#2C3E50",
               }}
             >
-              3. Xem lại yêu cầu của bạn
+              2. Xem lại yêu cầu của bạn
             </Typography>
-            {currentStep >= 3 && (
+            {currentStep >= 2 && (
               <>
                 <Box
                   sx={{
@@ -532,7 +494,7 @@ const ReservationPage = () => {
             Đặt phòng
           </Typography>
 
-          {[1, 2, 3].map((step) => (
+          {[1, 2].map((step) => (
             <React.Fragment key={`step-${step}`}>
               {renderStepContent(step)}
             </React.Fragment>
