@@ -489,10 +489,22 @@ export default function HostPage() {
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
     setImageFiles(files);
-    setNewProperty({
-      ...newProperty,
-      images: files.map((file) => URL.createObjectURL(file)),
-    });
+    // Nếu đang ở chế độ chỉnh sửa, chỉ hiển thị ảnh mới
+    if (isEditMode) {
+      setNewProperty({
+        ...newProperty,
+        images: files.map((file) => URL.createObjectURL(file)),
+      });
+    } else {
+      // Nếu đang thêm mới, thêm vào danh sách ảnh hiện tại
+      setNewProperty({
+        ...newProperty,
+        images: [
+          ...newProperty.images,
+          ...files.map((file) => URL.createObjectURL(file)),
+        ],
+      });
+    }
   };
 
   // Ensure handleSendMessage is defined

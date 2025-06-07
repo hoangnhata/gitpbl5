@@ -31,6 +31,14 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Chip from "@mui/material/Chip";
+import CheckIcon from "@mui/icons-material/Check";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import Rating from "@mui/material/Rating";
+import Grid from "@mui/material/Grid";
+import RateReviewIcon from "@mui/icons-material/RateReview";
 
 const UserProfile = () => {
   const navigate = useNavigate();
@@ -55,6 +63,32 @@ const UserProfile = () => {
     oldPassword: "",
     newPassword: "",
     confirmPassword: "",
+  });
+  const [openReviewDialog, setOpenReviewDialog] = useState(false);
+  const [selectedBookingForReview, setSelectedBookingForReview] =
+    useState(null);
+  const [reviewForm, setReviewForm] = useState({
+    comment: "",
+    rating: 5,
+    image: null,
+  });
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewError, setReviewError] = useState("");
+  const criteriaList = [
+    { key: "cleanliness", label: "Vệ sinh", icon: "🧹" },
+    { key: "accuracy", label: "Đúng mô tả", icon: "✓" },
+    { key: "checkin", label: "Dễ nhận phòng", icon: "🔑" },
+    { key: "support", label: "Hỗ trợ", icon: "💬" },
+    { key: "location", label: "Xung quanh", icon: "📍" },
+    { key: "value", label: "Đáng tiền", icon: "💰" },
+  ];
+  const [criteriaRatings, setCriteriaRatings] = useState({
+    cleanliness: 0,
+    accuracy: 0,
+    checkin: 0,
+    support: 0,
+    location: 0,
+    value: 0,
   });
 
   useEffect(() => {
@@ -220,6 +254,85 @@ const UserProfile = () => {
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleConfirmCheckout = async (bookingId) => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await axiosInstance.put(`/api/bookings/${bookingId}`, {
+        bookingStatus: "SUCCESS",
+      });
+      if (res.data.code === 200) {
+        setBookedRooms((prev) =>
+          prev.map((room) =>
+            room.bookingId === bookingId
+              ? { ...room, bookingStatus: "SUCCESS" }
+              : room
+          )
+        );
+        setSuccess(true);
+        setTimeout(() => setSuccess(false), 2000);
+      } else {
+        setError(res.data.message || "Xác nhận trả phòng thất bại");
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || "Xác nhận trả phòng thất bại");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const calcAvgRating = () => {
+    const arr = Object.values(criteriaRatings);
+    const filled = arr.filter((v) => v > 0);
+    if (filled.length === 0) return 0;
+    return (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1);
+  };
+
+  const handleSubmitReview = async () => {
+    setReviewLoading(true);
+    setReviewError("");
+    try {
+      if (
+        Object.values(criteriaRatings).some((v) => v === 0) ||
+        !reviewForm.comment.trim()
+      ) {
+        setReviewError("Vui lòng đánh giá đủ 6 tiêu chí và nhập bình luận!");
+        setReviewLoading(false);
+        return;
+      }
+      const formData = new FormData();
+      formData.append("comment", reviewForm.comment);
+      formData.append("rating", calcAvgRating());
+      if (reviewForm.image) formData.append("image", reviewForm.image);
+      await axiosInstance.post(
+        `/api/listings/reviews/${selectedBookingForReview.bookingId}`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+      setBookedRooms((prev) =>
+        prev.map((room) =>
+          room.bookingId === selectedBookingForReview.bookingId
+            ? { ...room, commented: true }
+            : room
+        )
+      );
+      setOpenReviewDialog(false);
+      setReviewForm({ comment: "", rating: 5, image: null });
+      setCriteriaRatings({
+        cleanliness: 0,
+        accuracy: 0,
+        checkin: 0,
+        support: 0,
+        location: 0,
+        value: 0,
+      });
+    } catch (err) {
+      setReviewError(err.response?.data?.message || "Gửi đánh giá thất bại");
+    } finally {
+      setReviewLoading(false);
     }
   };
 
@@ -418,6 +531,16 @@ const UserProfile = () => {
       <Typography variant="h5" sx={{ mb: 3, fontWeight: 700 }}>
         Phòng đã đặt
       </Typography>
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+      {success && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          Xác nhận trả phòng thành công!
+        </Alert>
+      )}
       <TableContainer
         component={Paper}
         sx={{ background: "#232323", borderRadius: 3 }}
@@ -450,13 +573,16 @@ const UserProfile = () => {
               <TableCell sx={{ color: "#fff", fontWeight: 700 }}>
                 bookingStatus
               </TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 700 }}>
+                Hành động
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {bookedRooms.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={9}
+                  colSpan={10}
                   align="center"
                   sx={{ color: "#bdbdbd", py: 6 }}
                 >
@@ -513,19 +639,104 @@ const UserProfile = () => {
                         fontWeight: 600,
                         color: "#fff",
                         bgcolor:
-                          room.bookingStatus === "PENDING"
+                          room.bookingStatus &&
+                          room.bookingStatus.trim().toUpperCase() === "PENDING"
                             ? "#fbc02d"
-                            : room.bookingStatus === "CONFIRMED"
+                            : room.bookingStatus &&
+                              room.bookingStatus.trim().toUpperCase() ===
+                                "CONFIRMED"
                             ? "#1976d2"
-                            : room.bookingStatus === "PAID"
+                            : room.bookingStatus &&
+                              room.bookingStatus.trim().toUpperCase() === "PAID"
                             ? "#43a047"
-                            : room.bookingStatus === "CANCELLED"
+                            : room.bookingStatus &&
+                              room.bookingStatus.trim().toUpperCase() ===
+                                "CANCELLED"
                             ? "#d32f2f"
+                            : room.bookingStatus &&
+                              room.bookingStatus.trim().toUpperCase() ===
+                                "SUCCESS"
+                            ? "#1976d2"
                             : "#757575",
                         textTransform: "uppercase",
                         letterSpacing: 1,
                       }}
                     />
+                  </TableCell>
+                  <TableCell>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      {room.bookingStatus &&
+                        room.bookingStatus.trim().toUpperCase() === "PAID" && (
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<CheckIcon />}
+                            sx={{
+                              borderRadius: 99,
+                              borderColor: "#43a047",
+                              color: "#43a047",
+                              fontWeight: 700,
+                              fontSize: 13,
+                              px: 2,
+                              py: 0.5,
+                              minWidth: 0,
+                              background: "rgba(67, 160, 71, 0.08)",
+                              transition: "all 0.2s",
+                              "&:hover": {
+                                background: "#43a047",
+                                color: "#fff",
+                                borderColor: "#43a047",
+                              },
+                            }}
+                            disabled={loading}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleConfirmCheckout(room.bookingId);
+                            }}
+                          >
+                            Xác nhận trả phòng
+                          </Button>
+                        )}
+                      {room.bookingStatus &&
+                        room.bookingStatus.trim().toUpperCase() === "SUCCESS" &&
+                        room.commented === true && (
+                          <Button
+                            variant="outlined"
+                            color="primary"
+                            size="large"
+                            startIcon={<RateReviewIcon />}
+                            sx={{
+                              ml: 1,
+                              borderRadius: 99,
+                              borderColor: "#1976d2",
+                              color: "#1976d2",
+                              fontWeight: 700,
+                              fontSize: 16,
+                              px: 3,
+                              py: 1.5,
+                              minWidth: 0,
+                              background: "rgba(25, 118, 210, 0.08)",
+                              transition: "all 0.2s",
+                              display: "flex",
+                              flexDirection: "row",
+                              alignItems: "center",
+                              lineHeight: 1.2,
+                              "&:hover": {
+                                background: "#1976d2",
+                                color: "#fff",
+                                borderColor: "#1976d2",
+                              },
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedBookingForReview(room);
+                              setOpenReviewDialog(true);
+                            }}
+                          >
+                            Đánh Giá
+                          </Button>
+                        )}
+                    </Stack>
                   </TableCell>
                 </TableRow>
               ))
@@ -674,6 +885,7 @@ const UserProfile = () => {
       )}
     </Card>
   );
+
   return (
     <Container maxWidth="lg">
       <Box
@@ -728,6 +940,149 @@ const UserProfile = () => {
         {currentTab === 2 && renderFavoriteRooms()}
         {currentTab === 3 && renderMessages()}
       </Box>
+      {/* Dialog đánh giá */}
+      <Dialog
+        open={openReviewDialog}
+        onClose={() => setOpenReviewDialog(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle
+          sx={{
+            fontWeight: 700,
+            fontSize: 22,
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+          }}
+        >
+          <span style={{ fontSize: 28, color: "#FFD600" }}>⭐</span> Đánh giá
+          của khách
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ mb: 3, p: 2, bgcolor: "#18191a", borderRadius: 2 }}>
+            <Typography
+              sx={{
+                fontWeight: 600,
+                fontSize: 18,
+                mb: 2,
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+              }}
+            >
+              <span style={{ fontSize: 22, color: "#FFD600" }}>⭐</span> Đánh
+              giá từng tiêu chí
+            </Typography>
+            <Grid container spacing={2}>
+              {criteriaList.map((c) => (
+                <Grid item xs={12} sm={6} key={c.key}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 2,
+                      bgcolor: "#232323",
+                      borderRadius: 2,
+                      p: 2,
+                    }}
+                  >
+                    <span style={{ fontSize: 22 }}>{c.icon}</span>
+                    <span style={{ fontSize: 15, color: "#fff", minWidth: 90 }}>
+                      {c.label}
+                    </span>
+                    <Rating
+                      value={criteriaRatings[c.key]}
+                      onChange={(_, v) =>
+                        setCriteriaRatings((r) => ({ ...r, [c.key]: v }))
+                      }
+                      size="medium"
+                      sx={{ ml: "auto" }}
+                    />
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
+          <Box
+            sx={{
+              mb: 3,
+              p: 2,
+              bgcolor: "#18191a",
+              borderRadius: 2,
+              textAlign: "center",
+            }}
+          >
+            <span style={{ fontSize: 16, color: "#bdbdbd" }}>
+              Số sao tổng quát:{" "}
+            </span>
+            <span style={{ color: "#2196F3", fontWeight: 600, fontSize: 18 }}>
+              {calcAvgRating()}
+            </span>
+            <span style={{ color: "#bdbdbd" }}>/5</span>
+          </Box>
+          <Box sx={{ mb: 3, p: 2, bgcolor: "#18191a", borderRadius: 2 }}>
+            <Typography
+              sx={{
+                fontWeight: 600,
+                fontSize: 16,
+                mb: 1,
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+              }}
+            >
+              <span style={{ fontSize: 20 }}>✍️</span> Để lại bình luận & đánh
+              giá
+            </Typography>
+            <TextField
+              label="Chia sẻ trải nghiệm của bạn..."
+              multiline
+              minRows={3}
+              value={reviewForm.comment}
+              onChange={(e) =>
+                setReviewForm((f) => ({ ...f, comment: e.target.value }))
+              }
+              fullWidth
+              sx={{
+                mt: 1,
+                bgcolor: "#232323",
+                borderRadius: 2,
+                input: { color: "#fff" },
+                textarea: { color: "#fff" },
+              }}
+            />
+            <Button variant="outlined" component="label" sx={{ mt: 2 }}>
+              {reviewForm.image ? reviewForm.image.name : "Chọn ảnh (tùy chọn)"}
+              <input
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={(e) =>
+                  setReviewForm((f) => ({ ...f, image: e.target.files[0] }))
+                }
+              />
+            </Button>
+          </Box>
+          {reviewError && <Alert severity="error">{reviewError}</Alert>}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setOpenReviewDialog(false)}
+            disabled={reviewLoading}
+          >
+            Hủy
+          </Button>
+          <Button
+            onClick={handleSubmitReview}
+            variant="contained"
+            color="primary"
+            disabled={reviewLoading}
+          >
+            {reviewLoading ? "Đang gửi..." : "Gửi đánh giá"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };
