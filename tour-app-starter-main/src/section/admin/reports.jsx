@@ -30,6 +30,7 @@ import {
   Refresh as RefreshIcon
 } from '@mui/icons-material';
 import Chart from 'chart.js/auto';
+import axiosInstance from '../../api/axiosConfig';
 
 export default function AdminReports() {
   const revenueRef = useRef(null);
@@ -44,6 +45,9 @@ export default function AdminReports() {
     feedback: null
   });
   const [isCanvasReady, setIsCanvasReady] = useState(false);
+  const [ratingStats, setRatingStats] = useState([]);
+  const [loadingRating, setLoadingRating] = useState(false);
+  const [errorRating, setErrorRating] = useState(null);
 
   const statsData = [
     {
@@ -101,12 +105,10 @@ export default function AdminReports() {
   };
 
   const initializeCharts = () => {
-
     if (!revenueRef.current || !usersRef.current || !popularRef.current || !feedbackRef.current) {
       console.log('Canvas elements not ready yet');
       return;
     }
-
     Object.values(charts).forEach(chart => {
       if (chart) {
         try {
@@ -116,8 +118,35 @@ export default function AdminReports() {
         }
       }
     });
-
     try {
+      const fetchRatingStats = async () => {
+        setLoadingRating(true);
+        setErrorRating(null);
+        try {
+          const res = await axiosInstance.get('/api/statistic/rating');
+          setRatingStats(res.data.result || []);
+        } catch (err) {
+          setErrorRating('Không thể tải dữ liệu đánh giá');
+        } finally {
+          setLoadingRating(false);
+        }
+      };
+      fetchRatingStats();
+
+      const ratingColor = (rating) => {
+        switch (rating) {
+          case 5: return '#4caf50';
+          case 4: return '#8bc34a';
+          case 3: return '#ffeb3b';
+          case 2: return '#ff9800';
+          case 1: return '#f44336';
+          default: return '#bdbdbd';
+        }
+      };
+
+      const feedbackLabels = ratingStats.map(item => `${item.rating} sao`);
+      const feedbackData = ratingStats.map(item => item.persentage);
+      const feedbackColors = ratingStats.map(item => ratingColor(item.rating));
       const newCharts = {
         revenue: createChart(revenueRef.current, 'line', {
           labels: ['Th1', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6'],
@@ -133,7 +162,7 @@ export default function AdminReports() {
           plugins: {
             title: {
               display: true,
-              text: 'Doanh thu theo tháng',
+              text: 'Doanh thu theo ngày',
               font: { size: 16, weight: 'bold' }
             },
             legend: {
@@ -195,16 +224,10 @@ export default function AdminReports() {
         }),
 
         feedback: createChart(feedbackRef.current, 'doughnut', {
-          labels: ['5 sao', '4 sao', '3 sao', '2 sao', '1 sao'],
+          labels: feedbackLabels,
           datasets: [{
-            data: [5, 2, 1, 3, 1],
-            backgroundColor: [
-            '#4caf50', 
-            '#8bc34a', 
-            '#ffeb3b', 
-            '#ff9800', 
-            '#f44336'  
-          ],
+            data: feedbackData,
+            backgroundColor: feedbackColors
           }]
         }, {
           plugins: {
