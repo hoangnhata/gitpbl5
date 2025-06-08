@@ -1,10 +1,29 @@
-import React from "react";
-import { Box, Typography } from "@mui/material";
+import React, { useEffect, useState } from "react";
+import { Box, Typography, Chip } from "@mui/material";
 import StarIcon from "@mui/icons-material/Star";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
 import PropTypes from "prop-types";
+import { analyzeSentiment } from "../../../api/sentimentAnalysis";
 
 const RatingDisplay = ({ rating, reviewCount, reviews }) => {
+  const [reviewsWithSentiment, setReviewsWithSentiment] = useState([]);
+
+  useEffect(() => {
+    const analyzeReviews = async () => {
+      const analyzedReviews = await Promise.all(
+        reviews.map(async (review) => {
+          const sentiment = await analyzeSentiment(review.comment);
+          return { ...review, sentiment };
+        })
+      );
+      setReviewsWithSentiment(analyzedReviews);
+    };
+
+    if (reviews.length > 0) {
+      analyzeReviews();
+    }
+  }, [reviews]);
+
   // Calculate the number of filled and unfilled stars based on the rating
   const fullStars = Math.floor(rating);
   const hasHalfStar = rating % 1 >= 0.5;
@@ -65,11 +84,8 @@ const RatingDisplay = ({ rating, reviewCount, reviews }) => {
     `;
     document.head.appendChild(style);
 
-    // Tạo state tạm cho reviews trong dialog
-    let dialogReviews = [...reviews];
-
     const renderReviews = () => {
-      if (dialogReviews.length === 0) {
+      if (reviewsWithSentiment.length === 0) {
         return `
           <div style="text-align: center; padding: 32px 20px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef;">
             <span style="font-size: 32px;">📝</span>
@@ -79,7 +95,7 @@ const RatingDisplay = ({ rating, reviewCount, reviews }) => {
       }
       return (
         `<div class='review-grid'>` +
-        dialogReviews
+        reviewsWithSentiment
           .map(
             (review) => `
         <div class="review-card">
@@ -107,6 +123,13 @@ const RatingDisplay = ({ rating, reviewCount, reviews }) => {
             <span style="margin-left: 10px; color: #2196F3; font-weight: 600; font-size: 16px;">${
               review.rating
             }</span>
+            <span style="margin-left: 10px; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; background-color: ${
+              review.sentiment === "positive" ? "#e8f5e9" : "#ffebee"
+            }; color: ${
+              review.sentiment === "positive" ? "#2e7d32" : "#c62828"
+            };">
+              ${review.sentiment === "positive" ? "Tích cực" : "Tiêu cực"}
+            </span>
           </div>
           <p style="margin: 0 0 10px 0; color: #495057; line-height: 1.6; font-size: 15px;">${
             review.comment

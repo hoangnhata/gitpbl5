@@ -495,7 +495,7 @@ const UserProfile = () => {
       setBookedRooms((prev) =>
         prev.map((room) =>
           room.bookingId === selectedBookingForReview.bookingId
-            ? { ...room, commented: true }
+            ? { ...room, commented: false }
             : room
         )
       );
@@ -867,7 +867,7 @@ const UserProfile = () => {
                         )}
                       {room.bookingStatus &&
                         room.bookingStatus.trim().toUpperCase() === "SUCCESS" &&
-                        room.commented === true && (
+                        room.commented === false && (
                           <Button
                             variant="outlined"
                             color="primary"
