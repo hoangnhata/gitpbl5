@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Typography,
   Box,
@@ -38,52 +38,12 @@ import {
   FilterList as FilterIcon,
   Close as CloseIcon
 } from '@mui/icons-material';
+import Pagination from '@mui/material/Pagination';
+import axiosInstance from '../../api/axiosConfig';
 
-const initialBookings = [
-  {
-    id: 1,
-    guestName: 'Hoàng Minh Nhật',
-    email: 'nhat@gmail.com',
-    phone: '0123456789',
-    propertyName: 'Biệt thự biển sang trọng',
-    checkIn: '2024-03-15',
-    checkOut: '2024-03-20',
-    totalPrice: '5,000,000',
-    status: 'pending',
-    paymentStatus: 'paid',
-    createdAt: '2024-03-10'
-  },
-  {
-    id: 2,
-    guestName: 'Lê Minh Khánh',
-    email: 'khanh@gmail.com',
-    phone: '0987654321',
-    propertyName: 'Căn hộ cao cấp view biển',
-    checkIn: '2024-03-18',
-    checkOut: '2024-03-25',
-    totalPrice: '7,000,000',
-    status: 'approved',
-    paymentStatus: 'paid',
-    createdAt: '2024-03-11'
-  },
-  {
-    id: 3,
-    guestName: 'Trần Phước Phú',
-    email: 'phu@gmail.com',
-    phone: '0369852147',
-    propertyName: 'Nhà phố hiện đại',
-    checkIn: '2024-03-20',
-    checkOut: '2024-03-25',
-    totalPrice: '3,500,000',
-    status: 'rejected',
-    paymentStatus: 'refunded',
-    createdAt: '2024-03-12'
-  },
-  
-];
 
 export default function AdminBookings() {
-  const [bookings, setBookings] = useState(initialBookings);
+  const [bookings, setBookings] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
@@ -91,17 +51,38 @@ export default function AdminBookings() {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [statusFilter, setStatusFilter] = useState('all');
   const [paymentFilter, setPaymentFilter] = useState('all');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  useEffect(() => {
+    const fetchBookings = async () => {
+      setLoading(true);
+      try {
+        const res = await axiosInstance.get(`/api/bookings/dasboards?page=${page-1}`);
+        setBookings(res.data.result || []);
+        setTotalPages(res.data.totalPages || 1);
+      } catch (err) {
+        setSnackbar({ open: true, message: 'Không thể tải danh sách đặt phòng!', severity: 'error' });
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBookings();
+  }, [page]);
+
+  const handlePageChange = (event, value) => {
+    setPage(value);
+  };
 
   const handleSearchChange = (e) => setSearchTerm(e.target.value.toLowerCase());
 
   const filteredBookings = bookings.filter(
     (booking) =>
-      (booking.guestName.toLowerCase().includes(searchTerm) ||
-        booking.email.toLowerCase().includes(searchTerm) ||
-        booking.phone.includes(searchTerm) ||
-        booking.propertyName.toLowerCase().includes(searchTerm)) &&
-      (statusFilter === 'all' || booking.status === statusFilter) &&
-      (paymentFilter === 'all' || booking.paymentStatus === paymentFilter)
+      (booking.title?.toLowerCase().includes(searchTerm) ||
+        booking.address?.toLowerCase().includes(searchTerm) ||
+        booking.city?.toLowerCase().includes(searchTerm)) &&
+      (statusFilter === 'all' || booking.bookingStatus?.toLowerCase() === statusFilter) &&
+      (paymentFilter === 'all' || (booking.paymentStatus ? booking.paymentStatus.toLowerCase() : 'null') === paymentFilter)
   );
 
   const handleOpenDialog = (booking) => {
@@ -120,8 +101,8 @@ export default function AdminBookings() {
 
       setBookings(prev =>
         prev.map(booking =>
-          booking.id === id
-            ? { ...booking, status: newStatus }
+          booking.bookingId === id
+            ? { ...booking, bookingStatus: newStatus }
             : booking
         )
       );
@@ -246,95 +227,95 @@ export default function AdminBookings() {
         </Grid>
       </Grid>
 
-      <TableContainer component={Paper}>
+      <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: 3 }}>
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell><strong>Khách hàng</strong></TableCell>
-              <TableCell><strong>Thông tin liên hệ</strong></TableCell>
-              <TableCell><strong>Phòng</strong></TableCell>
-              <TableCell><strong>Ngày đặt</strong></TableCell>
-              <TableCell><strong>Tổng tiền</strong></TableCell>
+              <TableCell><strong>Ảnh</strong></TableCell>
+              <TableCell><strong>Tiêu đề</strong></TableCell>
+              <TableCell><strong>Địa chỉ</strong></TableCell>
+              <TableCell><strong>Thành phố</strong></TableCell>
+              <TableCell><strong>Ngày nhận</strong></TableCell>
+              <TableCell><strong>Ngày trả</strong></TableCell>
+              <TableCell><strong>Giá</strong></TableCell>
               <TableCell><strong>Trạng thái</strong></TableCell>
-              <TableCell><strong>Thanh toán</strong></TableCell>
-              <TableCell><strong>Hành động</strong></TableCell>
+              {/* <TableCell><strong>Thanh toán</strong></TableCell> */}
+              <TableCell><strong>Chi tiết</strong></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredBookings.map((booking) => (
-              <TableRow key={booking.id}>
-                <TableCell>
-                  <Typography variant="subtitle2">{booking.guestName}</Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="body2">{booking.email}</Typography>
-                  <Typography variant="body2">{booking.phone}</Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="body2">{booking.propertyName}</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {booking.checkIn} - {booking.checkOut}
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="body2">{booking.createdAt}</Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="body2" color="primary.main" fontWeight={500}>
-                    {booking.totalPrice} VNĐ
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Chip
-                    label={getStatusText(booking.status)}
-                    color={getStatusColor(booking.status)}
-                    size="small"
-                  />
-                </TableCell>
-                <TableCell>
-                  <Chip
-                    label={getPaymentStatusText(booking.paymentStatus)}
-                    color={getPaymentStatusColor(booking.paymentStatus)}
-                    size="small"
-                  />
-                </TableCell>
-                <TableCell>
-                  <Stack direction="row" spacing={1}>
-                    <Tooltip title="Xem chi tiết">
-                      <IconButton
-                        color="primary"
-                        onClick={() => handleOpenDialog(booking)}
-                      >
-                        <ViewIcon />
-                      </IconButton>
-                    </Tooltip>
-                    {booking.status === 'pending' && (
-                      <>
-                        <Tooltip title="Xác nhận">
-                          <IconButton
-                            color="success"
-                            onClick={() => handleStatusChange(booking.id, 'approved')}
-                          >
-                            <ApproveIcon />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Từ chối">
-                          <IconButton
-                            color="error"
-                            onClick={() => handleStatusChange(booking.id, 'rejected')}
-                          >
-                            <RejectIcon />
-                          </IconButton>
-                        </Tooltip>
-                      </>
-                    )}
-                  </Stack>
-                </TableCell>
+            {filteredBookings.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={10} align="center">Không có đặt phòng nào</TableCell>
               </TableRow>
-            ))}
+            ) : (
+              filteredBookings.map((booking) => (
+                <TableRow key={booking.bookingId} hover sx={{ transition: 'background 0.2s' }}>
+                  <TableCell>
+                    <img src={booking.primaryUrl} alt={booking.title} style={{ width: 60, height: 40, borderRadius: 8, objectFit: 'cover' }} />
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="subtitle2">{booking.title}</Typography>
+                    <Typography variant="caption" color="text.secondary">#{booking.bookingId}</Typography>
+                  </TableCell>
+                  <TableCell>{booking.address}</TableCell>
+                  <TableCell>{booking.city}</TableCell>
+                  <TableCell>{booking.checkInDate}</TableCell>
+                  <TableCell>{booking.checkOutDate}</TableCell>
+                  <TableCell>{booking.price?.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}</TableCell>
+                  <TableCell>
+                    <Chip
+                      label={getStatusText(booking.bookingStatus?.toLowerCase())}
+                      color={getStatusColor(booking.bookingStatus?.toLowerCase())}
+                      size="small"
+                    />
+                  </TableCell>
+                  {/* <TableCell>
+                    <Chip
+                      label={getPaymentStatusText(booking.paymentStatus)}
+                      color={getPaymentStatusColor(booking.paymentStatus)}
+                      size="small"
+                    />
+                  </TableCell> */}
+                  <TableCell>
+                    <Stack direction="row" spacing={1}>
+                      <Tooltip title="Xem chi tiết">
+                        <IconButton color="primary" onClick={() => handleOpenDialog(booking)}>
+                          <ViewIcon />
+                        </IconButton>
+                      </Tooltip>
+                      {booking.bookingStatus === 'PENDING' && (
+                        <>
+                          {/* <Tooltip title="Xác nhận">
+                            <IconButton color="success" onClick={() => handleStatusChange(booking.bookingId, 'APPROVED')}>
+                              <ApproveIcon />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Từ chối">
+                            <IconButton color="error" onClick={() => handleStatusChange(booking.bookingId, 'REJECTED')}>
+                              <RejectIcon />
+                            </IconButton>
+                          </Tooltip> */}
+                        </>
+                      )}
+                    </Stack>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </TableContainer>
+      <Stack direction="row" justifyContent="center" sx={{ mt: 3 }}>
+        <Pagination
+          count={totalPages}
+          page={page}
+          onChange={handlePageChange}
+          color="primary"
+          shape="rounded"
+          size="medium"
+        />
+      </Stack>
 
       <Dialog
         open={openDialog}
@@ -356,34 +337,30 @@ export default function AdminBookings() {
           {selectedBooking && (
             <Grid container spacing={3} sx={{ mt: 1 }}>
               <Grid item xs={12} md={6}>
-                <Typography variant="subtitle2" color="text.secondary">Thông tin khách hàng</Typography>
+                <Typography variant="subtitle2" color="text.secondary">Thông tin đặt phòng</Typography>
                 <Stack spacing={1} sx={{ mt: 1 }}>
-                  <Typography><strong>Tên:</strong> {selectedBooking.guestName}</Typography>
-                  <Typography><strong>Email:</strong> {selectedBooking.email}</Typography>
-                  <Typography><strong>Số điện thoại:</strong> {selectedBooking.phone}</Typography>
+                  <Typography><strong>Tiêu đề:</strong> {selectedBooking.title}</Typography>
+                  <Typography><strong>Địa chỉ:</strong> {selectedBooking.address}</Typography>
+                  <Typography><strong>Thành phố:</strong> {selectedBooking.city}</Typography>
+                  <Typography><strong>Ngày nhận phòng:</strong> {selectedBooking.checkInDate}</Typography>
+                  <Typography><strong>Ngày trả phòng:</strong> {selectedBooking.checkOutDate}</Typography>
+                  <Typography><strong>Giá:</strong> {selectedBooking.price?.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}</Typography>
+                  <Typography><strong>Tổng tiền:</strong> {selectedBooking.totalPrice?.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}</Typography>
+                  <Typography><strong>Nội dung:</strong> {selectedBooking.content}</Typography>
+                  <Typography><strong>Trạng thái:</strong> {getStatusText(selectedBooking.bookingStatus?.toLowerCase())}</Typography>
+                  <Typography><strong>Thanh toán:</strong> {getPaymentStatusText(selectedBooking.paymentStatus)}</Typography>
+                  <Typography><strong>Đánh giá trung bình:</strong> {selectedBooking.avgStart}</Typography>
+                  <Typography><strong>Phổ biến:</strong> {selectedBooking.popular ? 'Có' : 'Không'}</Typography>
+                  <Typography><strong>Diện tích:</strong> {selectedBooking.area}</Typography>
+                  <Typography><strong>Đã bình luận:</strong> {selectedBooking.commented ? 'Có' : 'Không'}</Typography>
                 </Stack>
               </Grid>
               <Grid item xs={12} md={6}>
-                <Typography variant="subtitle2" color="text.secondary">Thông tin đặt phòng</Typography>
-                <Stack spacing={1} sx={{ mt: 1 }}>
-                  <Typography><strong>Phòng:</strong> {selectedBooking.propertyName}</Typography>
-                  <Typography><strong>Ngày nhận phòng:</strong> {selectedBooking.checkIn}</Typography>
-                  <Typography><strong>Ngày trả phòng:</strong> {selectedBooking.checkOut}</Typography>
-                  <Typography><strong>Tổng tiền:</strong> {selectedBooking.totalPrice} VNĐ</Typography>
-                </Stack>
-              </Grid>
-              <Grid item xs={12}>
-                <Typography variant="subtitle2" color="text.secondary">Trạng thái</Typography>
-                <Stack direction="row" spacing={2} sx={{ mt: 1 }}>
-                  <Chip
-                    label={getStatusText(selectedBooking.status)}
-                    color={getStatusColor(selectedBooking.status)}
-                  />
-                  <Chip
-                    label={getPaymentStatusText(selectedBooking.paymentStatus)}
-                    color={getPaymentStatusColor(selectedBooking.paymentStatus)}
-                  />
-                </Stack>
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                  <img src={selectedBooking.primaryUrl} alt={selectedBooking.title} style={{ width: 220, height: 150, borderRadius: 12, objectFit: 'cover', marginBottom: 8 }} />
+                  <Typography variant="caption" color="text.secondary">Mã đặt phòng: #{selectedBooking.bookingId}</Typography>
+                  <Typography variant="caption" color="text.secondary">Listing ID: {selectedBooking.listingId}</Typography>
+                </Box>
               </Grid>
             </Grid>
           )}

@@ -44,10 +44,10 @@ import AdminDashboard from "../section/admin/dashboard";
 import AdminUsers from "../section/admin/users";
 import AdminHostRequest from "../section/admin/hostRequest";
 import AdminProperties from "../section/admin/properties";
-import AdminTransactions from "../section/admin/transactions";
+// import AdminTransactions from "../section/admin/transactions";
 import AdminReports from "../section/admin/reports";
 import AdminSupports from "../section/admin/supports";
-import AdminSystem from "../section/admin/system";
+// import AdminSystem from "../section/admin/system";
 import AdminAmenities from "../section/admin/amenities";
 import AdminCategories from "../section/admin/categories";
 import AdminBookings from "../section/admin/bookings";
@@ -170,10 +170,10 @@ export default function AdminPage() {
     <PeopleIcon />,
     <RequestPageIcon />,
     <HomeIcon />, 
-    <ReceiptIcon />,
+    // <ReceiptIcon />,
     <ReportIcon />,
     <SupportAgentIcon />,
-    <SettingsIcon />, 
+    // <SettingsIcon />, 
     <ExtensionIcon />, 
     <CategoryIcon />, 
     <BookOnlineIcon />,
@@ -197,7 +197,7 @@ export default function AdminPage() {
                 Theo dõi & quản lý toàn bộ hệ thống
               </Typography>
             </Grid>
-            <Grid item xs={12} md={6}>
+            {/* <Grid item xs={12} md={6}>
               <Stack direction="row" spacing={2} justifyContent="flex-end">
                 <IconButton>
                   <Badge badgeContent={5} color="error">
@@ -212,7 +212,7 @@ export default function AdminPage() {
                   Lọc
                 </Button>
               </Stack>
-            </Grid>
+            </Grid> */}
           </Grid>
         </Paper>
 
@@ -221,8 +221,8 @@ export default function AdminPage() {
           sx={{ p: 2, mb: 3, bgcolor: "background.default" }}
         >
           <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12}>
-              <TextField
+            {/* <Grid item xs={12}> */}
+              {/* <TextField
                 fullWidth
                 placeholder="Tìm kiếm..."
                 value={searchQuery}
@@ -232,8 +232,8 @@ export default function AdminPage() {
                     <SearchIcon sx={{ mr: 1, color: "text.secondary" }} />
                   ),
                 }}
-              />
-            </Grid>
+              /> */}
+            {/* </Grid> */}
           </Grid>
         </Paper>
 
@@ -267,14 +267,14 @@ export default function AdminPage() {
             <Tab icon={tabIcons[1]} label="Người dùng" />
             <Tab icon={tabIcons[2]} label="Yêu cầu host" />
             <Tab icon={tabIcons[3]} label="Chỗ ở" />
-            <Tab icon={tabIcons[4]} label="Giao dịch" />
-            <Tab icon={tabIcons[5]} label="Báo cáo" />
-            <Tab icon={tabIcons[6]} label="Hỗ trợ" />
-            <Tab icon={tabIcons[7]} label="Hệ thống" />
-            <Tab icon={tabIcons[8]} label="Tiện ích" />
-            <Tab icon={tabIcons[9]} label="Danh mục" />
-            <Tab icon={tabIcons[10]} label="Đơn đặt phòng" />
-            <Tab icon={tabIcons[11]} label="Quốc gia" />
+            {/* <Tab icon={tabIcons[4]} label="Giao dịch" /> */}
+            <Tab icon={tabIcons[4]} label="Báo cáo" />
+            <Tab icon={tabIcons[5]} label="Hỗ trợ" />
+            {/* <Tab icon={tabIcons[7]} label="Hệ thống" /> */}
+            <Tab icon={tabIcons[6]} label="Tiện nghi" />
+            <Tab icon={tabIcons[7]} label="Danh mục" />
+            <Tab icon={tabIcons[8]} label="Đơn đặt phòng" />
+            <Tab icon={tabIcons[9]} label="Quốc gia" />
             
           </Tabs>
         </Box>
@@ -292,28 +292,28 @@ export default function AdminPage() {
           <TabPanel value={tabValue} index={3}>
             <AdminProperties />
           </TabPanel>
-          <TabPanel value={tabValue} index={4}>
+          {/* <TabPanel value={tabValue} index={4}>
             <AdminTransactions />
-          </TabPanel>
-          <TabPanel value={tabValue} index={5}>
+          </TabPanel> */}
+          <TabPanel value={tabValue} index={4}>
             <AdminReports />
           </TabPanel>
-          <TabPanel value={tabValue} index={6}>
+          <TabPanel value={tabValue} index={5}>
             <AdminSupports />
           </TabPanel>
-          <TabPanel value={tabValue} index={7}>
+          {/* <TabPanel value={tabValue} index={7}>
             <AdminSystem />
-          </TabPanel>
-          <TabPanel value={tabValue} index={8}>
+          </TabPanel> */}
+          <TabPanel value={tabValue} index={6}>
             <AdminAmenities />
           </TabPanel>
-          <TabPanel value={tabValue} index={9}>
+          <TabPanel value={tabValue} index={7}>
             <AdminCategories />
           </TabPanel>
-          <TabPanel value={tabValue} index={10}>
+          <TabPanel value={tabValue} index={8}>
             <AdminBookings />
           </TabPanel>
-          <TabPanel value={tabValue} index={11}>
+          <TabPanel value={tabValue} index={9}>
             <AdminCountries />
           </TabPanel>
           

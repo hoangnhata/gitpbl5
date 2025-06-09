@@ -105,13 +105,32 @@ export default function AdminUsers() {
     setEditMode(false);
   };
 
-  const handleSaveChanges = () => {
-    const updatedUsers = users.map(user => 
-      user.id === editedUser.id ? editedUser : user
-    );
-    setUsers(updatedUsers);
-    setShowSuccessAlert(true);
-    handleCloseDialog();
+  const handleSaveChanges = async () => {
+    if (!editedUser) return;
+    setLoading(true);
+    setError(null);
+    try {
+      // Chuẩn bị payload đúng format yêu cầu
+      const payload = {
+        id: editedUser.id,
+        email: editedUser.email,
+        phone: editedUser.phone,
+        address: editedUser.address,
+        role: getAccountType(editedUser.roles) === 'Admin' ? 'Admin' : (getAccountType(editedUser.roles) === 'Chủ cho thuê' ? 'Host' : 'Guest')
+      };
+      // Gọi API PUT
+      const response = await axiosInstance.put('/api/users/admin/change/profile', payload);
+      if (response.data?.result) {
+        setEditedUser(response.data.result);
+        setUsers((prev) => prev.map((u) => (u.id === editedUser.id ? response.data.result : u)));
+        setShowSuccessAlert(true);
+        handleCloseDialog();
+      }
+    } catch (err) {
+      setError('Không thể cập nhật thông tin người dùng!');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleStatusChange = async (event) => {
@@ -325,8 +344,7 @@ export default function AdminUsers() {
                 label="Họ tên"
                 name="fullname"
                 value={editedUser?.fullname || ''}
-                onChange={handleInputChange}
-                disabled={!editMode}
+                disabled
               />
             </Grid>
             <Grid item xs={12} md={6}>

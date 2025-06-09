@@ -48,70 +48,27 @@ export default function AdminDashboard() {
     { 
       label: 'Tổng người dùng', 
       value: userCount,
-      change: '+12.5%',
+      change: '',
       icon: <PeopleIcon sx={{ fontSize: 40, color: 'primary.main' }} />,
       color: 'primary.main'
     },
     { 
       label: 'Tổng giao dịch', 
       value: transactionCount,
-      change: '+8.2%',
+      change: '',
       icon: <TrendingUpIcon sx={{ fontSize: 40, color: 'success.main' }} />,
       color: 'success.main'
     },
     { 
-      label: 'Chỗ ở đã duyệt', 
+      label: 'Chỗ ở', 
       value: approvedCount,
-      change: '+15.3%',
+      change: '',
       icon: <HomeIcon sx={{ fontSize: 40, color: 'warning.main' }} />,
       color: 'warning.main'
     },
-    { 
-      label: 'Số lượng hỗ trợ', 
-      value: 3,
-      change: '-5.2%',
-      icon: <WarningIcon sx={{ fontSize: 40, color: 'error.main' }} />,
-      color: 'error.main'
-    }
   ];
 
-  const recentActions = [
-    {
-      id: 1,
-      type: 'approve',
-      message: 'Duyệt chỗ ở id100 - 110 Ngô Quyền, Đà Nẵng',
-      time: '5 phút trước',
-      user: 'Admin A'
-    },
-    {
-      id: 2,
-      type: 'warning',
-      message: 'Cảnh báo người dùng #22',
-      time: '15 phút trước',
-      user: 'Admin B'
-    },
-    {
-      id: 3,
-      type: 'reply',
-      message: 'Phản hồi hỗ trợ #88',
-      time: '30 phút trước',
-      user: 'Admin C'
-    },
-    {
-      id: 4,
-      type: 'approve',
-      message: 'Duyệt chỗ ở id101 - 120 Lê Duẩn, Hà Nội',
-      time: '1 giờ trước',
-      user: 'Admin A'
-    },
-    {
-      id: 5,
-      type: 'warning',
-      message: 'Cảnh báo người dùng #23',
-      time: '2 giờ trước',
-      user: 'Admin B'
-    }
-  ];
+  
 
   const getActionIcon = (type) => {
     switch (type) {
@@ -305,20 +262,20 @@ export default function AdminDashboard() {
         </Tooltip>
       </Stack>
 
-      <Grid container spacing={3} sx={{ mb: 4 }}>
+      <Grid container spacing={3} sx={{ mb: 4, justifyContent: 'center' }}>
         {dataSummary.map((item, index) => (
-          <Grid item xs={12} sm={6} md={3} key={index}>
-            <Card elevation={3}>
+          <Grid item xs={12} sm={6} md={4} key={index}>
+            <Card elevation={3} sx={{ height: '100%' }}>
               <CardContent>
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                  <Box>
+                  <Box sx={{ flex: 1, textAlign: 'center' }}>
                     <Typography color="text.secondary" gutterBottom>
                       {item.label}
                     </Typography>
                     <Typography variant="h4" component="div" sx={{ mb: 1 }}>
                       {item.value}
                     </Typography>
-                    <Stack direction="row" spacing={1} alignItems="center">
+                    <Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
                       {item.change.startsWith('+') ? (
                         <ArrowUpwardIcon sx={{ color: 'success.main', fontSize: 16 }} />
                       ) : (
@@ -334,7 +291,9 @@ export default function AdminDashboard() {
                       </Typography>
                     </Stack>
                   </Box>
-                  {item.icon}
+                  <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+                    {item.icon}
+                  </Box>
                 </Stack>
               </CardContent>
             </Card>
@@ -356,7 +315,7 @@ export default function AdminDashboard() {
         </Grid>
       </Grid>
 
-      <Paper elevation={3} sx={{ p: 3 }}>
+      {/* <Paper elevation={3} sx={{ p: 3 }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
           <Typography variant="h6" fontWeight={600}>
             Hoạt động gần đây
@@ -395,7 +354,7 @@ export default function AdminDashboard() {
             </React.Fragment>
           ))}
         </List>
-      </Paper>
+      </Paper> */}
     </Box>
   );
 }
