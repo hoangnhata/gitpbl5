@@ -42,12 +42,9 @@ export default function AdminMessages() {
   const user = JSON.parse(localStorage.getItem("user"));
 
   useEffect(() => {
-    // Fetch persons list
     axiosInstance.get("/api/chat/persons").then((res) => {
       setPersons(res.data.result || []);
     });
-
-    // Setup WebSocket connection
     const socket = new SockJS("http://localhost:8080/ws");
     stompClient.current = Stomp.over(socket);
 

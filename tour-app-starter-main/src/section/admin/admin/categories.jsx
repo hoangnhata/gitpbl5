@@ -249,14 +249,6 @@ export default function AdminCategories() {
                     sx={{ alignSelf: 'center' }}
                   />
                   <Stack direction="row" spacing={1} justifyContent="center">
-                    <Tooltip title="Thay đổi icon">
-                      <IconButton
-                        color="primary"
-                        onClick={() => handleOpenImageDialog(category)}
-                      >
-                        <UploadIcon />
-                      </IconButton>
-                    </Tooltip>
                     <Tooltip title="Chỉnh sửa">
                       <IconButton
                         color="primary"
@@ -287,21 +279,12 @@ export default function AdminCategories() {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>
-          <Stack direction="row" justifyContent="space-between" alignItems="center">
-            <Typography variant="h6">
-              Thay đổi icon cho {selectedCategory?.name}
-            </Typography>
-            <IconButton onClick={handleCloseImageDialog}>
-              <CloseIcon />
-            </IconButton>
-          </Stack>
-        </DialogTitle>
+       
         <DialogContent>
           <Stack spacing={3} sx={{ mt: 2 }}>
             <Box
               component="img"
-              src={newIcon || selectedCategory?.icon}
+              src={newIcon || (selectedCategory?.thumnailUrl ? (selectedCategory.thumnailUrl.startsWith('http') ? selectedCategory.thumnailUrl : `http://localhost:8080${selectedCategory.thumnailUrl}`) : '')}
               alt="Current icon"
               sx={{
                 width: '100%',
@@ -329,6 +312,30 @@ export default function AdminCategories() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseImageDialog}>Hủy</Button>
+          <Button
+            variant="contained"
+            disabled={!newIcon || loading}
+            onClick={async () => {
+              if (!selectedCategory || !newIcon) return;
+              setLoading(true);
+              try {
+                if (!formData.thumbnail) return;
+                const payload = new FormData();
+                payload.append('thumbnail', formData.thumbnail);
+                await axiosInstance.put(`/api/categories/${selectedCategory.id}/icon`, payload, { headers: { 'Content-Type': 'multipart/form-data' } });
+                const res = await axiosInstance.get('/api/categories/index');
+                setCategories(res.data.result || []);
+                setSnackbar({ open: true, message: 'Cập nhật icon thành công!', severity: 'success' });
+                setOpenImageDialog(false);
+              } catch (error) {
+                setSnackbar({ open: true, message: 'Cập nhật icon thất bại!', severity: 'error' });
+              } finally {
+                setLoading(false);
+              }
+            }}
+          >
+            {loading ? 'Đang lưu...' : 'Lưu icon mới'}
+          </Button>
         </DialogActions>
       </Dialog>
 

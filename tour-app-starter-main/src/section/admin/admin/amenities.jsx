@@ -142,7 +142,7 @@ export default function AdminAmenities() {
       } else {
         await axiosInstance.post('/api/amenities', payload, { headers });
       }
-      // Reload amenities
+    
       const res = await axiosInstance.get('/api/amenities/index');
       setAmenities(res.data.result || []);
       setSnackbar({ open: true, message: selectedAmenity ? 'Cập nhật tiện nghi thành công!' : 'Thêm tiện nghi thành công!', severity: 'success' });
@@ -154,12 +154,12 @@ export default function AdminAmenities() {
     }
   };
 
-  const getStatusColor = (status) => {
-    return status === 'active' ? 'success' : 'error';
+  const getStatusColor = (isActive) => {
+    return isActive ? 'success' : 'error';
   };
 
-  const getStatusText = (status) => {
-    return status === 'active' ? 'Đang hoạt động' : 'Không hoạt động';
+  const getStatusText = (isActive) => {
+    return isActive ? 'Đang hoạt động' : 'Không hoạt động';
   };
 
   const handleDeleteAmenity = async (id) => {
@@ -167,7 +167,6 @@ export default function AdminAmenities() {
     setLoading(true);
     try {
       await axiosInstance.delete(`/api/amenities/${id}`);
-      // Reload amenities
       const res = await axiosInstance.get('/api/amenities/index');
       setAmenities(res.data.result || []);
       setSnackbar({ open: true, message: 'Xóa tiện nghi thành công!', severity: 'success' });
@@ -240,20 +239,13 @@ export default function AdminAmenities() {
                     {amenity.description || ''}
                   </Typography>
                   <Chip
-                    label={getStatusText(amenity.status)}
-                    color={getStatusColor(amenity.status)}
+                    label={getStatusText(amenity.isActive)}
+                    color={getStatusColor(amenity.isActive)}
                     size="small"
                     sx={{ alignSelf: 'center' }}
                   />
                   <Stack direction="row" spacing={1} justifyContent="center">
-                    <Tooltip title="Thay đổi icon">
-                      <IconButton
-                        color="primary"
-                        onClick={() => handleOpenImageDialog(amenity)}
-                      >
-                        <UploadIcon />
-                      </IconButton>
-                    </Tooltip>
+                 
                     <Tooltip title="Chỉnh sửa">
                       <IconButton
                         color="primary"
@@ -284,21 +276,12 @@ export default function AdminAmenities() {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>
-          <Stack direction="row" justifyContent="space-between" alignItems="center">
-            <Typography variant="h6">
-              Thay đổi icon cho {selectedAmenity?.name}
-            </Typography>
-            <IconButton onClick={handleCloseImageDialog}>
-              <CloseIcon />
-            </IconButton>
-          </Stack>
-        </DialogTitle>
+      
         <DialogContent>
           <Stack spacing={3} sx={{ mt: 2 }}>
             <Box
               component="img"
-              src={newIcon || selectedAmenity?.icon}
+              src={newIcon || (selectedAmenity?.thumnailUrl ? (selectedAmenity.thumnailUrl.startsWith('http') ? selectedAmenity.thumnailUrl : `http://localhost:8080${selectedAmenity.thumnailUrl}`) : '')}
               alt="Current icon"
               sx={{
                 width: '100%',
@@ -326,6 +309,30 @@ export default function AdminAmenities() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseImageDialog}>Hủy</Button>
+          <Button
+            variant="contained"
+            disabled={!newIcon || loading}
+            onClick={async () => {
+              if (!selectedAmenity || !newIcon) return;
+              setLoading(true);
+              try {
+                if (!formData.thumbnail) return;
+                const payload = new FormData();
+                payload.append('thumbnail', formData.thumbnail);
+                await axiosInstance.put(`/api/amenities/${selectedAmenity.id}/icon`, payload, { headers: { 'Content-Type': 'multipart/form-data' } });
+                const res = await axiosInstance.get('/api/amenities/index');
+                setAmenities(res.data.result || []);
+                setSnackbar({ open: true, message: 'Cập nhật icon thành công!', severity: 'success' });
+                setOpenImageDialog(false);
+              } catch (error) {
+                setSnackbar({ open: true, message: 'Cập nhật icon thất bại!', severity: 'error' });
+              } finally {
+                setLoading(false);
+              }
+            }}
+          >
+            {loading ? 'Đang lưu...' : 'Lưu icon mới'}
+          </Button>
         </DialogActions>
       </Dialog>
       <Snackbar
@@ -381,18 +388,6 @@ export default function AdminAmenities() {
                 />
               }
               label={<Typography fontWeight={500}>Hoạt động</Typography>}
-              sx={{ ml: 0 }}
-            />
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={formData.deleted}
-                  onChange={handleFormChange}
-                  name="deleted"
-                  color="error"
-                />
-              }
-              label={<Typography fontWeight={500}>Đã xóa</Typography>}
               sx={{ ml: 0 }}
             />
             <Button

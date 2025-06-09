@@ -26,7 +26,8 @@ import {
   Alert,
   IconButton,
   Tooltip,
-  Avatar
+  Avatar,
+  CircularProgress
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -34,48 +35,7 @@ import {
   Save as SaveIcon,
   Close as CloseIcon
 } from '@mui/icons-material';
-
-const mockUsers = [
-  {
-    id: 1,
-    name: 'Hoàng Minh Nhật',
-    username: 'nhat123',
-    email: 'nhat@gmail.com',
-    role: 'Khách thuê',
-    status: 'Hoạt động',
-    phone: '0123456789',
-    address: 'Hà Nội',
-    createdAt: '2024-01-01',
-    lastLogin: '2024-03-20',
-    avatar: 'https://i.pinimg.com/736x/1b/5b/d7/1b5bd7880cacfbc0a775f48e47633003.jpg'
-  },
-  {
-    id: 2,
-    name: 'Lê Minh Khánh',
-    username: 'khanh456',
-    email: 'khanh@gmail.com',
-    role: 'Chủ cho thuê',
-    status: 'Bị khóa',
-    phone: '0987654321',
-    address: 'TP.HCM',
-    createdAt: '2024-01-15',
-    lastLogin: '2024-03-19',
-    avatar: 'https://i.pinimg.com/736x/1b/5b/d7/1b5bd7880cacfbc0a775f48e47633003.jpg'
-  },
-  {
-    id: 3,
-    name: 'Trần Phước Phú',
-    username: 'phu789',
-    email: 'c@gmail.com',
-    role: 'Khách thuê',
-    status: 'Hoạt động',
-    phone: '0123456789',
-    address: 'Đà Nẵng',
-    createdAt: '2024-02-01',
-    lastLogin: '2024-03-18',
-    avatar: 'https://i.pinimg.com/736x/1b/5b/d7/1b5bd7880cacfbc0a775f48e47633003.jpg'
-  }
-];
+import axiosInstance from '../../api/axiosConfig';
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
@@ -87,19 +47,49 @@ export default function AdminUsers() {
   const [editMode, setEditMode] = useState(false);
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [editedUser, setEditedUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    setUsers(mockUsers);
+    fetchUsers();
   }, []);
 
-  const filteredUsers = users.filter((user) => {
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const response = await axiosInstance.get('/api/users');
+      const userData = Array.isArray(response.data?.result) ? response.data.result : [];
+      setUsers(userData);
+      setError(null);
+    } catch (err) {
+      setError('Không thể tải danh sách người dùng. Vui lòng thử lại sau.');
+      console.error('Error fetching users:', err);
+      setUsers([]); 
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getAccountType = (roles) => {
+    if (Array.isArray(roles)) {
+      if (roles.includes('ADMIN')) return 'Admin';
+      if (roles.includes('HOST')) return 'Chủ cho thuê';
+      if (roles.includes('GUEST')) return 'Khách';
+    }
+    return '';
+  };
+
+  const filteredUsers = Array.isArray(users) ? users.filter((user) => {
     const matchesSearch =
-      user.name.toLowerCase().includes(search.toLowerCase()) ||
-      user.email.toLowerCase().includes(search.toLowerCase());
-    const matchesRole = roleFilter === 'all' || user.role === roleFilter;
-    const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
+      user.fullname?.toLowerCase().includes(search.toLowerCase()) ||
+      user.email?.toLowerCase().includes(search.toLowerCase());
+    const matchesRole =
+      roleFilter === 'all' ||
+      getAccountType(user.roles) === roleFilter;
+    const userStatus = user.isActive === true ? 'Đang hoạt động' : 'Đã khóa';
+    const matchesStatus = statusFilter === 'all' || userStatus === statusFilter;
     return matchesSearch && matchesRole && matchesStatus;
-  });
+  }) : [];
 
   const handleAction = (user) => {
     setSelectedUser(user);
@@ -124,17 +114,36 @@ export default function AdminUsers() {
     handleCloseDialog();
   };
 
-  const handleStatusChange = (event) => {
-    setEditedUser({
-      ...editedUser,
-      status: event.target.checked ? 'Hoạt động' : 'Bị khóa'
-    });
+  const handleStatusChange = async (event) => {
+    if (!editedUser) return;
+    const newIsActive = event.target.checked;
+    try {
+      setLoading(true);
+      // Gọi API PUT cập nhật trạng thái hoạt động
+      const response = await axiosInstance.put(`/api/users/active/${editedUser.id}/${newIsActive}`);
+      if (response.data?.result) {
+        setEditedUser(response.data.result);
+        setUsers((prev) =>
+          prev.map((u) => (u.id === editedUser.id ? response.data.result : u))
+        );
+        setShowSuccessAlert(true);
+      }
+      setError(null);
+    } catch (err) {
+      setError('Không thể cập nhật trạng thái hoạt động!');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleRoleChange = (event) => {
+    let roles = [];
+    if (event.target.value === 'Admin') roles = ['GUEST', 'HOST', 'ADMIN'];
+    else if (event.target.value === 'Chủ cho thuê') roles = ['GUEST', 'HOST'];
+    else if (event.target.value === 'Khách') roles = ['GUEST'];
     setEditedUser({
       ...editedUser,
-      role: event.target.value
+      roles
     });
   };
 
@@ -164,8 +173,9 @@ export default function AdminUsers() {
           sx={{ minWidth: 200 }}
         >
           <MenuItem value="all">Tất cả</MenuItem>
-          <MenuItem value="Khách thuê">Khách thuê</MenuItem>
+          <MenuItem value="Khách">Khách</MenuItem>
           <MenuItem value="Chủ cho thuê">Chủ cho thuê</MenuItem>
+          <MenuItem value="Admin">Admin</MenuItem>
         </Select>
         <Select 
           value={statusFilter} 
@@ -177,53 +187,77 @@ export default function AdminUsers() {
           <MenuItem value="Bị khóa">Bị khóa</MenuItem>
         </Select>
       </Stack>
-      <TableContainer component={Paper} elevation={3}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell><strong>Ảnh đại diện</strong></TableCell>
-              <TableCell><strong>Họ tên</strong></TableCell>
-              <TableCell><strong>Email</strong></TableCell>
-              <TableCell><strong>Loại tài khoản</strong></TableCell>
-              <TableCell><strong>Trạng thái</strong></TableCell>
-              <TableCell><strong>Hành động</strong></TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredUsers.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell>
-                  <Avatar
-                    src={user.avatar}
-                    alt={user.name}
-                    sx={{ width: 56, height: 56 }}
-                  />
-                </TableCell>
-                <TableCell>{user.name}</TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>{user.role}</TableCell>
-                <TableCell>
-                  <Typography 
-                    color={user.status === 'Hoạt động' ? 'success.main' : 'error.main'}
-                    fontWeight={500}
-                  >
-                    {user.status}
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={() => handleAction(user)}
-                  >
-                    Xử lý
-                  </Button>
-                </TableCell>
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
+
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+          <CircularProgress />
+        </Box>
+      ) : (
+        <TableContainer component={Paper} elevation={3}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell><strong>Ảnh đại diện</strong></TableCell>
+                <TableCell><strong>Họ tên</strong></TableCell>
+                <TableCell><strong>Email</strong></TableCell>
+                <TableCell><strong>Loại tài khoản</strong></TableCell>
+                <TableCell><strong>Trạng thái</strong></TableCell>
+                <TableCell><strong>Hành động</strong></TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableHead>
+            <TableBody>
+              {filteredUsers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} align="center">
+                    Không tìm thấy người dùng nào
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredUsers.map((user) => {
+                  const userStatus = user.isActive === true ? 'Đang hoạt động' : 'Đã khóa';
+                  return (
+                    <TableRow key={user.id}>
+                      <TableCell>
+                        <Avatar
+                          src={user.thumnailUrl}
+                          alt={user.fullname}
+                          sx={{ width: 56, height: 56 }}
+                        />
+                      </TableCell>
+                      <TableCell>{user.fullname}</TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>{getAccountType(user.roles)}</TableCell>
+                      <TableCell>
+                        <Typography 
+                          color={userStatus === 'Đang hoạt động' ? 'success.main' : 'error.main'}
+                          fontWeight={500}
+                        >
+                          {userStatus}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          onClick={() => handleAction(user)}
+                        >
+                          Xử lý
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
 
       <Dialog 
         open={openDialog} 
@@ -254,24 +288,24 @@ export default function AdminUsers() {
           <Grid container spacing={3} sx={{ mt: 1 }}>
             <Grid item xs={12} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
               <Avatar
-                src={editedUser?.avatar}
-                alt={editedUser?.name}
+                src={editedUser?.thumnailUrl}
+                alt={editedUser?.fullname}
                 sx={{ width: 120, height: 120, mb: 2 }}
               />
               <FormControlLabel
                 control={
                   <Switch
-                    checked={editedUser?.status === 'Hoạt động'}
+                    checked={!!editedUser?.isActive}
                     onChange={handleStatusChange}
                     disabled={!editMode}
                   />
                 }
                 label={
                   <Typography 
-                    color={editedUser?.status === 'Hoạt động' ? 'success.main' : 'error.main'}
+                    color={!!editedUser?.isActive ? 'success.main' : 'error.main'}
                     fontWeight={500}
                   >
-                    {editedUser?.status === 'Hoạt động' ? 'Đang hoạt động' : 'Đã khóa'}
+                    {!!editedUser?.isActive ? 'Đang hoạt động' : 'Đã khóa'}
                   </Typography>
                 }
               />
@@ -289,8 +323,8 @@ export default function AdminUsers() {
               <TextField
                 fullWidth
                 label="Họ tên"
-                name="name"
-                value={editedUser?.name || ''}
+                name="fullname"
+                value={editedUser?.fullname || ''}
                 onChange={handleInputChange}
                 disabled={!editMode}
               />
@@ -329,13 +363,14 @@ export default function AdminUsers() {
               <FormControl fullWidth>
                 <InputLabel>Loại tài khoản</InputLabel>
                 <Select
-                  value={editedUser?.role || ''}
+                  value={getAccountType(editedUser?.roles) || ''}
                   onChange={handleRoleChange}
                   label="Loại tài khoản"
                   disabled={!editMode}
                 >
-                  <MenuItem value="Khách thuê">Khách thuê</MenuItem>
+                  <MenuItem value="Khách">Khách</MenuItem>
                   <MenuItem value="Chủ cho thuê">Chủ cho thuê</MenuItem>
+                  <MenuItem value="Admin">Admin</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -343,7 +378,7 @@ export default function AdminUsers() {
               <TextField
                 fullWidth
                 label="Ngày tạo"
-                value={editedUser?.createdAt || ''}
+                value={editedUser?.createdAt ? new Date(editedUser.createdAt).toLocaleString() : ''}
                 disabled
               />
             </Grid>
@@ -351,7 +386,7 @@ export default function AdminUsers() {
               <TextField
                 fullWidth
                 label="Lần đăng nhập cuối"
-                value={editedUser?.lastLogin || ''}
+                value={editedUser?.lastLogin ? new Date(editedUser.lastLogin).toLocaleString() : ''}
                 disabled
               />
             </Grid>
