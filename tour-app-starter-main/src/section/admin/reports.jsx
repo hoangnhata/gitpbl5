@@ -7,10 +7,6 @@ import {
   Card,
   CardContent,
   Stack,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
   IconButton,
   Tooltip,
   Table,
@@ -19,25 +15,31 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Chip
+  Chip,
+  Pagination,
+  CircularProgress
 } from '@mui/material';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import {
   TrendingUp as TrendingUpIcon,
   People as PeopleIcon,
   Home as HomeIcon,
   Star as StarIcon,
-  Download as DownloadIcon,
   Refresh as RefreshIcon
 } from '@mui/icons-material';
 import Chart from 'chart.js/auto';
 import axiosInstance from '../../api/axiosConfig';
+import Button from '@mui/material/Button';
 
 export default function AdminReports() {
   const revenueRef = useRef(null);
   const usersRef = useRef(null);
   const popularRef = useRef(null);
   const feedbackRef = useRef(null);
-  const [timeRange, setTimeRange] = useState('6months');
+  const [startDate, setStartDate] = useState(new Date(new Date().setMonth(new Date().getMonth() - 6)));
+  const [endDate, setEndDate] = useState(new Date());
   const [charts, setCharts] = useState({
     revenue: null,
     users: null,
@@ -48,6 +50,18 @@ export default function AdminReports() {
   const [ratingStats, setRatingStats] = useState([]);
   const [loadingRating, setLoadingRating] = useState(false);
   const [errorRating, setErrorRating] = useState(null);
+  const [userStats, setUserStats] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [errorUsers, setErrorUsers] = useState(null);
+  const [revenueStats, setRevenueStats] = useState([]);
+  const [loadingRevenue, setLoadingRevenue] = useState(false);
+  const [errorRevenue, setErrorRevenue] = useState(null);
+  const [transactions, setTransactions] = useState([]);
+  const [loadingTransactions, setLoadingTransactions] = useState(false);
+  const [errorTransactions, setErrorTransactions] = useState(null);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const pageSize = 10;
 
   const statsData = [
     {
@@ -86,8 +100,82 @@ export default function AdminReports() {
     { id: 3, user: 'Trần Phước Phú', amount: '₫6', type: 'Đặt phòng', date: '2025-03-18', status: 'Hoàn thành' }
   ];
 
-  const createChart = (ctx, type, data, options) => {
+  const fetchUserStats = async () => {
+    setLoadingUsers(true);
+    setErrorUsers(null);
+    try {
+      const start = startDate instanceof Date ? startDate.toISOString().slice(0, 10) : startDate;
+      const end = endDate instanceof Date ? endDate.toISOString().slice(0, 10) : endDate;
+      const res = await axiosInstance.get(`/api/statistic/users/counts?startDate=${start}&endDate=${end}`);
+      setUserStats(res.data.result || []);
+    } catch (err) {
+      setErrorUsers('Không thể tải dữ liệu người dùng mới');
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  const handleFilter = () => {
+    fetchUserStats();
+  };
+
+  useEffect(() => {
+    fetchUserStats();
+  }, []);
+
+  function groupByPeriod(data, period) {
+    const result = {};
+    data.forEach(item => {
+      const date = new Date(item.day);
+      let key = '';
+      if (period === 'week') {
+        const year = date.getFullYear();
+        const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
+        const pastDaysOfYear = (date - firstDayOfYear) / 86400000;
+        const week = Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+        key = `${year}-W${week}`;
+      } else if (period === 'month') {
+        key = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+      } else if (period === 'quarter') {
+        key = `${date.getFullYear()}-Q${Math.floor(date.getMonth() / 3) + 1}`;
+      }
+      if (!result[key]) result[key] = 0;
+      result[key] += item.totalUsers;
+    });
+    return Object.entries(result).map(([label, value]) => ({ label, value }));
+  }
+
+  let usersLabels = userStats.map(item => item.day);
+  let usersData = userStats.map(item => item.totalUsers);
+  let groupType = null;
+  if (usersLabels.length > 6) {
+    const weekData = groupByPeriod(userStats, 'week');
+    if (weekData.length <= 6) {
+      usersLabels = weekData.map(i => i.label);
+      usersData = weekData.map(i => i.value);
+      groupType = 'week';
+    } else {
+      const monthData = groupByPeriod(userStats, 'month');
+      if (monthData.length <= 6) {
+        usersLabels = monthData.map(i => i.label);
+        usersData = monthData.map(i => i.value);
+        groupType = 'month';
+      } else {
+        const quarterData = groupByPeriod(userStats, 'quarter');
+        usersLabels = quarterData.map(i => i.label);
+        usersData = quarterData.map(i => i.value);
+        groupType = 'quarter';
+      }
+    }
+  }
+
+  const createChart = (ctx, type, data, options, oldChart) => {
     if (!ctx) return null;
+    if (oldChart) {
+      try {
+        oldChart.destroy();
+      } catch (e) { }
+    }
     try {
       return new Chart(ctx, {
         type,
@@ -147,12 +235,29 @@ export default function AdminReports() {
       const feedbackLabels = ratingStats.map(item => `${item.rating} sao`);
       const feedbackData = ratingStats.map(item => item.persentage);
       const feedbackColors = ratingStats.map(item => ratingColor(item.rating));
+
+      const fetchRevenueStats = async () => {
+        setLoadingRevenue(true);
+        setErrorRevenue(null);
+        try {
+          const start = startDate instanceof Date ? startDate.toISOString().slice(0, 10) : startDate;
+          const end = endDate instanceof Date ? endDate.toISOString().slice(0, 10) : endDate;
+          const res = await axiosInstance.get(`/api/statistic/payments/revenue?startDate=${start}&endDate=${end}`);
+          setRevenueStats(res.data.result || []);
+        } catch (err) {
+          setErrorRevenue('Không thể tải dữ liệu doanh thu');
+        } finally {
+          setLoadingRevenue(false);
+        }
+      };
+      fetchRevenueStats();
+
       const newCharts = {
         revenue: createChart(revenueRef.current, 'line', {
-          labels: ['Th1', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6'],
+          labels: revenueStats.map(item => item.day),
           datasets: [{
             label: 'Doanh thu',
-            data: [6, 2, 3, 1, 5, 4],
+            data: revenueStats.map(item => item.sumRevenue),
             borderColor: '#42a5f5',
             backgroundColor: 'rgba(66, 165, 245, 0.1)',
             tension: 0.4,
@@ -173,24 +278,26 @@ export default function AdminReports() {
             y: {
               beginAtZero: true,
               ticks: {
-                callback: value => `₫${value}K`
+                callback: value => `${value.toLocaleString()}₫`
               }
             }
           }
-        }),
-
+        }, charts.revenue),
         users: createChart(usersRef.current, 'bar', {
-          labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6'],
+          labels: usersLabels,
           datasets: [{
             label: 'Người dùng mới',
-            data: [6, 2, 3, 1, 5, 4],
+            data: usersData,
             backgroundColor: '#66bb6a'
           }]
         }, {
           plugins: {
             title: {
               display: true,
-              text: 'Người dùng mới theo tháng',
+              text: groupType === 'week' ? 'Người dùng mới theo tuần'
+                : groupType === 'month' ? 'Người dùng mới theo tháng'
+                : groupType === 'quarter' ? 'Người dùng mới theo quý'
+                : 'Người dùng mới theo ngày',
               font: { size: 16, weight: 'bold' }
             },
             legend: {
@@ -202,8 +309,7 @@ export default function AdminReports() {
               beginAtZero: true
             }
           }
-        }),
-
+        }, charts.users),
         popular: createChart(popularRef.current, 'pie', {
           labels: ['Villa', 'Căn hộ', 'Nhà gỗ'],
           datasets: [{
@@ -221,8 +327,7 @@ export default function AdminReports() {
               position: 'bottom'
             }
           }
-        }),
-
+        }, charts.popular),
         feedback: createChart(feedbackRef.current, 'doughnut', {
           labels: feedbackLabels,
           datasets: [{
@@ -240,7 +345,7 @@ export default function AdminReports() {
               position: 'bottom'
             }
           }
-        })
+        }, charts.feedback)
       };
 
       setCharts(newCharts);
@@ -279,10 +384,20 @@ export default function AdminReports() {
         }
       });
     };
-  }, [isCanvasReady, timeRange]);
+  }, [isCanvasReady]);
 
-  const handleTimeRangeChange = (event) => {
-    setTimeRange(event.target.value);
+  useEffect(() => {
+    if (isCanvasReady) {
+      initializeCharts();
+    }
+  }, [isCanvasReady, userStats]);
+
+  const handleStartDateChange = (newDate) => {
+    setStartDate(newDate);
+  };
+
+  const handleEndDateChange = (newDate) => {
+    setEndDate(newDate);
   };
 
   const handleRefresh = () => {
@@ -291,37 +406,80 @@ export default function AdminReports() {
     }
   };
 
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      setLoadingTransactions(true);
+      setErrorTransactions(null);
+      try {
+        const res = await axiosInstance.get(`/api/payment/data?page=${page-1}`);
+        setTransactions(res.data.result || []);
+        setTotalPages(res.data.totalPages || 10);
+      } catch (err) {
+        setErrorTransactions('Không thể tải dữ liệu giao dịch!');
+      } finally {
+        setLoadingTransactions(false);
+      }
+    };
+    fetchTransactions();
+  }, [page]);
+
+  const handlePageChange = (event, value) => {
+    setPage(value);
+  };
+
   return (
     <Box sx={{ width: '100%', p: 3 }}>
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4 }}>
         <Typography variant="h4" sx={{ fontWeight: 600 }}>
           Thống kê & Báo cáo
         </Typography>
-        <Stack direction="row" spacing={2}>
-          <FormControl sx={{ minWidth: 200 }}>
-            <InputLabel>Thời gian</InputLabel>
-            <Select
-              value={timeRange}
-              label="Thời gian"
-              onChange={handleTimeRangeChange}
-            >
-              <MenuItem value="7days">7 ngày qua</MenuItem>
-              <MenuItem value="30days">30 ngày qua</MenuItem>
-              <MenuItem value="3months">3 tháng qua</MenuItem>
-              <MenuItem value="6months">6 tháng qua</MenuItem>
-              <MenuItem value="1year">1 năm qua</MenuItem>
-            </Select>
-          </FormControl>
-          <Tooltip title="Làm mới">
-            <IconButton onClick={handleRefresh}>
-              <RefreshIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Tải xuống báo cáo">
-            <IconButton>
-              <DownloadIcon />
-            </IconButton>
-          </Tooltip>
+        <Stack direction="row" spacing={2} alignItems="center">
+          <LocalizationProvider dateAdapter={AdapterDateFns}>
+            <DatePicker
+              label="Từ ngày"
+              value={startDate}
+              onChange={handleStartDateChange}
+              maxDate={endDate}
+              slotProps={{
+                textField: {
+                  size: "small",
+                  sx: { width: 180 }
+                }
+              }}
+            />
+            <DatePicker
+              label="Đến ngày"
+              value={endDate}
+              onChange={handleEndDateChange}
+              minDate={startDate}
+              maxDate={new Date()}
+              slotProps={{
+                textField: {
+                  size: "small",
+                  sx: { width: 180 }
+                }
+              }}
+            />
+          </LocalizationProvider>
+          <Button
+            variant="contained"
+            onClick={handleFilter}
+            sx={{
+              backgroundColor: 'primary.main',
+              color: 'white',
+              '&:hover': {
+                backgroundColor: 'primary.dark',
+              },
+              px: 3,
+              py: 1,
+              borderRadius: 2,
+              textTransform: 'none',
+              fontWeight: 600,
+              boxShadow: 2
+            }}
+          >
+            Lọc
+          </Button>
         </Stack>
       </Stack>
 
@@ -361,7 +519,15 @@ export default function AdminReports() {
         </Grid>
         <Grid item xs={12} md={4}>
           <Paper elevation={3} sx={{ p: 3, height: 400 }}>
-            <canvas ref={usersRef}></canvas>
+            {loadingUsers ? (
+              <Stack alignItems="center" sx={{ py: 4 }}>
+                <CircularProgress />
+              </Stack>
+            ) : errorUsers ? (
+              <Typography color="error">{errorUsers}</Typography>
+            ) : (
+              <canvas ref={usersRef}></canvas>
+            )}
           </Paper>
         </Grid>
         <Grid item xs={12} md={6}>
@@ -380,39 +546,64 @@ export default function AdminReports() {
         <Typography variant="h6" sx={{ mb: 2 }}>
           Giao dịch gần đây
         </Typography>
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Người dùng</TableCell>
-                <TableCell>Số tiền</TableCell>
-                <TableCell>Loại</TableCell>
-                <TableCell>Ngày</TableCell>
-                <TableCell>Trạng thái</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {recentTransactions.map((transaction) => (
-                <TableRow key={transaction.id}>
-                  <TableCell>{transaction.user}</TableCell>
-                  <TableCell>{transaction.amount}</TableCell>
-                  <TableCell>{transaction.type}</TableCell>
-                  <TableCell>{transaction.date}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={transaction.status}
-                      color={
-                        transaction.status === 'Hoàn thành' ? 'success' :
-                        transaction.status === 'Đã hoàn tiền' ? 'warning' : 'error'
-                      }
-                      size="small"
-                    />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        {loadingTransactions ? (
+          <Stack alignItems="center" sx={{ py: 4 }}>
+            <CircularProgress />
+          </Stack>
+        ) : errorTransactions ? (
+          <Typography color="error">{errorTransactions}</Typography>
+        ) : (
+          <>
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Tài khoản</TableCell>
+                    <TableCell>Phương thức</TableCell>
+                    <TableCell>Số tiền</TableCell>
+                    <TableCell>Trạng thái</TableCell>
+                    <TableCell>Nội dung</TableCell>
+                    <TableCell>Ngày tạo</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {transactions.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} align="center">Không có giao dịch nào</TableCell>
+                    </TableRow>
+                  ) : (
+                    transactions.map((transaction, idx) => (
+                      <TableRow key={idx}>
+                        <TableCell>{transaction.username}</TableCell>
+                        <TableCell>{transaction.payment_method}</TableCell>
+                        <TableCell>{transaction.amount?.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}</TableCell>
+                        <TableCell>
+                          <Chip
+                            label={transaction.status === 'SUCCESS' ? 'Thành công' : transaction.status}
+                            color={transaction.status === 'SUCCESS' ? 'success' : 'error'}
+                            size="small"
+                          />
+                        </TableCell>
+                        <TableCell>{transaction.content}</TableCell>
+                        <TableCell>{transaction.createDate ? new Date(transaction.createDate).toLocaleString('vi-VN') : '-'}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            <Stack direction="row" justifyContent="center" sx={{ mt: 2 }}>
+              <Pagination
+                count={totalPages}
+                page={page}
+                onChange={handlePageChange}
+                color="primary"
+                shape="rounded"
+                size="medium"
+              />
+            </Stack>
+          </>
+        )}
       </Paper>
     </Box>
   );

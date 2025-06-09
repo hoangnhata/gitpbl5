@@ -32,14 +32,17 @@ import {
 } from '@mui/icons-material';
 import Chart from 'chart.js/auto';
 import axiosInstance from "../../api/axiosConfig";
+import CircularProgress from '@mui/material/CircularProgress';
 
 export default function AdminDashboard() {
   const summaryChartRef = useRef(null);
-  const categoryChartRef = useRef(null);
   const [isCanvasReady, setIsCanvasReady] = useState(false);
   const [approvedCount, setApprovedCount] = useState(0);
   const [userCount, setUserCount] = useState(0);
   const [transactionCount, setTransactionCount] = useState(0);
+  const [loadingSummary, setLoadingSummary] = useState(true);
+  const [monthlyUsers, setMonthlyUsers] = useState([]);
+  const [monthlyRevenue, setMonthlyRevenue] = useState([]);
 
   const dataSummary = [
     { 
@@ -123,8 +126,43 @@ export default function AdminDashboard() {
     }
   };
 
-  const createChart = (ctx, type, data, options) => {
+  const groupByMonth = (data, valueKey) => {
+    const result = Array(12).fill(0);
+    data.forEach(item => {
+      const date = new Date(item.day);
+      const month = date.getMonth(); 
+      result[month] += item[valueKey] || 0;
+    });
+    return result
+      .map((value, idx) => ({ month: idx, value }))
+      .filter(item => item.value > 0);
+  };
+
+  useEffect(() => {
+    const fetchSummaryData = async () => {
+      setLoadingSummary(true);
+      try {
+        const [usersRes, revenueRes] = await Promise.all([
+          axiosInstance.get('/api/statistic/users/counts?startDate=2025-01-01&endDate=2025-12-31'),
+          axiosInstance.get('/api/statistic/payments/revenue?startDate=2025-01-10&endDate=2025-12-31')
+        ]);
+        setMonthlyUsers(groupByMonth(usersRes.data.result || [], 'totalUsers'));
+        setMonthlyRevenue(groupByMonth(revenueRes.data.result || [], 'sumRevenue'));
+      } catch (e) {
+        setMonthlyUsers([]);
+        setMonthlyRevenue([]);
+      } finally {
+        setLoadingSummary(false);
+      }
+    };
+    fetchSummaryData();
+  }, []);
+
+  const createChart = (ctx, type, data, options, oldChart) => {
     if (!ctx) return null;
+    if (oldChart) {
+      try { oldChart.destroy(); } catch (e) {}
+    }
     try {
       return new Chart(ctx, {
         type,
@@ -141,109 +179,73 @@ export default function AdminDashboard() {
     }
   };
 
-  const initializeCharts = () => {
-    if (!summaryChartRef.current || !categoryChartRef.current) return;
-
-    const summaryChart = createChart(summaryChartRef.current, 'bar', {
-      labels: ['Th1', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6'],
-      datasets: [
-        {
-          label: 'Doanh thu (triệu VND)',
-          data: [120, 190, 300, 500, 200, 300],
-          backgroundColor: '#42a5f5',
-          borderRadius: 5
-        },
-        {
-          label: 'Người dùng mới',
-          data: [30, 45, 28, 60, 70, 90],
-          backgroundColor: '#66bb6a',
-          borderRadius: 5
-        }
-      ]
-    }, {
-      plugins: {
-        legend: { 
-          position: 'top',
-          labels: {
-            padding: 20,
-            usePointStyle: true
+  useEffect(() => {
+    if (!isCanvasReady) return;
+    let summaryChart = null;
+    if (summaryChartRef.current) {
+      const labels = Array.from({ length: 12 }, (_, i) => `Th${i + 1}`);
+      const revenueData = Array.from({ length: 12 }, (_, m) => {
+        const found = monthlyRevenue.find(item => item.month === m);
+        return found ? Math.round((found.value / 1_000_000) * 10) / 10 : 0;
+      });
+      const usersData = Array.from({ length: 12 }, (_, m) => {
+        const found = monthlyUsers.find(item => item.month === m);
+        return found ? found.value : 0;
+      });
+      summaryChart = createChart(summaryChartRef.current, 'bar', {
+        labels,
+        datasets: [
+          {
+            label: 'Doanh thu (triệu VND)',
+            data: revenueData,
+            backgroundColor: '#42a5f5',
+            borderRadius: 5
+          },
+          {
+            label: 'Người dùng mới',
+            data: usersData,
+            backgroundColor: '#66bb6a',
+            borderRadius: 5
+          }
+        ]
+      }, {
+        plugins: {
+          legend: { 
+            position: 'top',
+            labels: {
+              padding: 20,
+              usePointStyle: true
+            }
+          },
+          title: { 
+            display: true, 
+            text: 'Tổng hợp Giao dịch & Người dùng mới',
+            font: { size: 16, weight: 'bold' }
           }
         },
-        title: { 
-          display: true, 
-          text: 'Tổng hợp Giao dịch & Người dùng mới',
-          font: { size: 16, weight: 'bold' }
-        }
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          grid: {
-            drawBorder: false
-          }
-        },
-        x: {
-          grid: {
-            display: false
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: {
+              drawBorder: false
+            }
+          },
+          x: {
+            grid: {
+              display: false
+            }
           }
         }
-      }
-    });
-
-    const categoryChart = createChart(categoryChartRef.current, 'bar', {
-      labels: ['Villa', 'Căn hộ', 'Nhà gỗ', '5 sao', '4 sao', '3 sao', '2 sao', '1 sao'],
-      datasets: [
-        {
-          label: 'Số lượng',
-          data: [45, 25, 30, 20, 25, 30, 15, 10],
-          backgroundColor: [
-            '#ffa726', 
-            '#ab47bc', 
-            '#29b6f6', 
-            '#4caf50', 
-            '#8bc34a', 
-            '#ffeb3b', 
-            '#ff9800', 
-            '#f44336'  
-          ],
-          borderRadius: 5
-        }
-      ]
-    },
-     {
-      plugins: {
-        legend: { display: false },
-        title: { 
-          display: true, 
-          text: 'Phân loại chỗ ở & đánh giá',
-          font: { size: 16, weight: 'bold' }
-        }
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          ticks: { stepSize: 10 },
-          grid: {
-            drawBorder: false
-          }
-        },
-        x: {
-          grid: {
-            display: false
-          }
-        }
-      }
-    });
-
+      });
+    }
     return () => {
       if (summaryChart) summaryChart.destroy();
-      if (categoryChart) categoryChart.destroy();
     };
-  };
+  }, [isCanvasReady, monthlyUsers, monthlyRevenue]);
 
   useEffect(() => {
     const checkCanvasReady = () => {
-      if (summaryChartRef.current && categoryChartRef.current) {
+      if (summaryChartRef.current) {
         setIsCanvasReady(true);
       }
     };
@@ -253,12 +255,6 @@ export default function AdminDashboard() {
 
     return () => clearTimeout(timer);
   }, []);
-
-  useEffect(() => {
-    if (isCanvasReady) {
-      return initializeCharts();
-    }
-  }, [isCanvasReady]);
 
   useEffect(() => {
     const fetchApprovedCount = async () => {
@@ -347,14 +343,15 @@ export default function AdminDashboard() {
       </Grid>
 
       <Grid container spacing={4} sx={{ mb: 4 }}>
-        <Grid item xs={12} md={8}>
+        <Grid item xs={12}>
           <Paper elevation={3} sx={{ p: 3, height: 400 }}>
-            <canvas ref={summaryChartRef}></canvas>
-          </Paper>
-        </Grid>
-        <Grid item xs={12} md={4}>
-          <Paper elevation={3} sx={{ p: 3, height: 400 }}>
-            <canvas ref={categoryChartRef}></canvas>
+            {loadingSummary ? (
+              <Stack alignItems="center" justifyContent="center" sx={{ height: 1 }}>
+                <CircularProgress />
+              </Stack>
+            ) : (
+              <canvas ref={summaryChartRef}></canvas>
+            )}
           </Paper>
         </Grid>
       </Grid>
