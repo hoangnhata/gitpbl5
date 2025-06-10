@@ -39,6 +39,7 @@ import DialogActions from "@mui/material/DialogActions";
 import Rating from "@mui/material/Rating";
 import Grid from "@mui/material/Grid";
 import RateReviewIcon from "@mui/icons-material/RateReview";
+import { analyzeSentiment } from "../api/sentimentAnalysis";
 
 const UserProfile = () => {
   const navigate = useNavigate();
@@ -53,6 +54,7 @@ const UserProfile = () => {
     email: "",
     phone: "",
     thumnailUrl: "", // Changed from thumbnailUrl to thumnailUrl to match API response
+    address: "", // Thêm address
   });
   const [bookedRooms, setBookedRooms] = useState([]);
   const [favoriteRooms, setFavoriteRooms] = useState([]);
@@ -102,6 +104,7 @@ const UserProfile = () => {
             email: userData.email || "",
             phone: userData.phone || "",
             thumnailUrl: userData.thumnailUrl || "",
+            address: userData.address || "", // Thêm address
           });
         }
       } catch (err) {
@@ -175,6 +178,7 @@ const UserProfile = () => {
       form.append("fullname", formData.fullname);
       form.append("email", formData.email);
       form.append("phone", formData.phone);
+      form.append("address", formData.address); // Thêm address
       if (selectedFile) {
         form.append("thumnail", selectedFile);
       }
@@ -193,6 +197,7 @@ const UserProfile = () => {
           email: updatedUserData.email,
           phone: updatedUserData.phone,
           thumnailUrl: updatedUserData.thumnailUrl,
+          address: updatedUserData.address, // Thêm address
         }));
         setPreviewUrl("");
         setSelectedFile(null);
@@ -295,6 +300,7 @@ const UserProfile = () => {
     setReviewLoading(true);
     setReviewError("");
     try {
+      // Validate đủ 6 tiêu chí và có bình luận
       if (
         Object.values(criteriaRatings).some((v) => v === 0) ||
         !reviewForm.comment.trim()
@@ -303,15 +309,38 @@ const UserProfile = () => {
         setReviewLoading(false);
         return;
       }
+
+      // Phân tích sentiment trước khi gửi review
+      console.log("Đang phân tích sentiment...");
+      const sentiment = await analyzeSentiment(reviewForm.comment);
+      console.log("Kết quả sentiment:", sentiment);
+
       const formData = new FormData();
       formData.append("comment", reviewForm.comment);
       formData.append("rating", calcAvgRating());
+
+      // Thêm log để debug
+      console.log("Sentiment trước khi xử lý:", sentiment);
+
+      // Xử lý sentiment an toàn hơn
+      let status = "NEUTRAL";
+      if (sentiment && typeof sentiment === "string") {
+        status = sentiment.toUpperCase();
+      } else if (sentiment && sentiment.status) {
+        status = sentiment.status.toUpperCase();
+      }
+
+      console.log("Status cuối cùng:", status);
+      formData.append("status", status);
+
       if (reviewForm.image) formData.append("image", reviewForm.image);
+
       await axiosInstance.post(
         `/api/listings/reviews/${selectedBookingForReview.bookingId}`,
         formData,
         { headers: { "Content-Type": "multipart/form-data" } }
       );
+
       setBookedRooms((prev) =>
         prev.map((room) =>
           room.bookingId === selectedBookingForReview.bookingId
@@ -330,6 +359,8 @@ const UserProfile = () => {
         value: 0,
       });
     } catch (err) {
+      console.error("Lỗi khi submit review:", err);
+      console.error("Chi tiết lỗi:", err.response?.data);
       setReviewError(err.response?.data?.message || "Gửi đánh giá thất bại");
     } finally {
       setReviewLoading(false);
@@ -432,6 +463,15 @@ const UserProfile = () => {
                 name="phone"
                 label="Số điện thoại"
                 value={formData.phone}
+                onChange={handleChange}
+                disabled={loading}
+              />
+
+              <TextField
+                fullWidth
+                name="address"
+                label="Địa chỉ"
+                value={formData.address}
                 onChange={handleChange}
                 disabled={loading}
               />

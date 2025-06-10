@@ -33,6 +33,7 @@ import {
   Select,
   CircularProgress,
   CardContent,
+  Autocomplete,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -139,6 +140,11 @@ export default function HostPage() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingPropertyId, setEditingPropertyId] = useState(null);
   const [editingPropertyData, setEditingPropertyData] = useState(null);
+
+  const [hostEditLoading, setHostEditLoading] = useState(false);
+  const [hostEditSuccess, setHostEditSuccess] = useState(false);
+  const [hostEditError, setHostEditError] = useState("");
+  const [hostEditAvatarFile, setHostEditAvatarFile] = useState(null);
 
   const fetchHostInfo = async () => {
     try {
@@ -972,50 +978,77 @@ export default function HostPage() {
               <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
                 Chỉnh sửa thông tin Host
               </Typography>
+              {hostEditError && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  {hostEditError}
+                </Alert>
+              )}
+              {hostEditSuccess && (
+                <Alert severity="success" sx={{ mb: 2 }}>
+                  Cập nhật thành công!
+                </Alert>
+              )}
               <Box
                 component="form"
-                onSubmit={(e) => {
+                onSubmit={async (e) => {
                   e.preventDefault();
-                  // Xử lý lưu thông tin host ở đây
+                  setHostEditLoading(true);
+                  setHostEditError("");
+                  setHostEditSuccess(false);
+                  try {
+                    const formData = new FormData();
+                    formData.append("country", hostEdit.location);
+                    formData.append(
+                      "languages",
+                      Array.isArray(hostEdit.languages)
+                        ? hostEdit.languages.join(",")
+                        : ""
+                    );
+                    formData.append("didHostYear", hostEdit.yearsHosting);
+                    formData.append("description", hostEdit.description);
+                    await axiosInstance.put(
+                      "/api/users/host/profile",
+                      formData,
+                      {
+                        headers: { "Content-Type": "multipart/form-data" },
+                      }
+                    );
+                    setHostEditSuccess(true);
+                    setTimeout(() => setHostEditSuccess(false), 2000);
+                    fetchHostInfo();
+                  } catch (err) {
+                    setHostEditError(
+                      err.response?.data?.message || "Cập nhật thất bại!"
+                    );
+                  } finally {
+                    setHostEditLoading(false);
+                  }
                 }}
                 sx={{ display: "flex", flexDirection: "column", gap: 2 }}
               >
-                <Stack direction="row" spacing={2} alignItems="center">
-                  <Avatar
-                    src={hostAvatarPreview}
-                    alt={hostEdit.name}
-                    sx={{ width: 80, height: 80 }}
-                  />
-                  <Button variant="outlined" component="label">
-                    Chọn ảnh đại diện
-                    <input
-                      type="file"
-                      accept="image/*"
-                      hidden
-                      onChange={(e) => {
-                        const file = e.target.files[0];
-                        if (file) {
-                          setHostAvatarPreview(URL.createObjectURL(file));
-                        }
+                <Autocomplete
+                  options={countryOptions}
+                  value={hostEdit.location || ""}
+                  onChange={(_, newValue) =>
+                    setHostEdit({ ...hostEdit, location: newValue || "" })
+                  }
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Quốc gia"
+                      placeholder="Chọn quốc gia..."
+                      size="small"
+                      fullWidth
+                      sx={{ borderRadius: 2, bgcolor: "background.paper" }}
+                      InputProps={{
+                        ...params.InputProps,
+                        sx: { borderRadius: 2 },
                       }}
                     />
-                  </Button>
-                </Stack>
-                <TextField
-                  label="Tên Host"
-                  value={hostEdit.name}
-                  onChange={(e) =>
-                    setHostEdit({ ...hostEdit, name: e.target.value })
-                  }
-                  fullWidth
-                />
-                <TextField
-                  label="Địa chỉ (Lives in)"
-                  value={hostEdit.location}
-                  onChange={(e) =>
-                    setHostEdit({ ...hostEdit, location: e.target.value })
-                  }
-                  fullWidth
+                  )}
+                  isOptionEqualToValue={(option, val) => option === val}
+                  autoHighlight
+                  clearOnEscape
                 />
                 <TextField
                   label="Ngôn ngữ (phân cách bởi dấu phẩy)"
@@ -1058,8 +1091,13 @@ export default function HostPage() {
                   type="submit"
                   variant="contained"
                   sx={{ mt: 2, alignSelf: "flex-end" }}
+                  disabled={hostEditLoading}
                 >
-                  Lưu thay đổi
+                  {hostEditLoading ? (
+                    <CircularProgress size={20} color="inherit" />
+                  ) : (
+                    "Lưu thay đổi"
+                  )}
                 </Button>
               </Box>
             </Card>

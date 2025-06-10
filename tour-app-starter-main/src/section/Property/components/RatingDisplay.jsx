@@ -3,25 +3,12 @@ import { Box, Typography, Chip } from "@mui/material";
 import StarIcon from "@mui/icons-material/Star";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
 import PropTypes from "prop-types";
-import { analyzeSentiment } from "../../../api/sentimentAnalysis";
 
 const RatingDisplay = ({ rating, reviewCount, reviews }) => {
-  const [reviewsWithSentiment, setReviewsWithSentiment] = useState([]);
+  const [reviewsWithSentiment, setReviewsWithSentiment] = useState(reviews);
 
   useEffect(() => {
-    const analyzeReviews = async () => {
-      const analyzedReviews = await Promise.all(
-        reviews.map(async (review) => {
-          const sentiment = await analyzeSentiment(review.comment);
-          return { ...review, sentiment };
-        })
-      );
-      setReviewsWithSentiment(analyzedReviews);
-    };
-
-    if (reviews.length > 0) {
-      analyzeReviews();
-    }
+    setReviewsWithSentiment(reviews);
   }, [reviews]);
 
   // Calculate the number of filled and unfilled stars based on the rating
@@ -124,11 +111,11 @@ const RatingDisplay = ({ rating, reviewCount, reviews }) => {
               review.rating
             }</span>
             <span style="margin-left: 10px; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; background-color: ${
-              review.sentiment === "positive" ? "#e8f5e9" : "#ffebee"
+              review.status === "POSITIVE" ? "#e8f5e9" : "#ffebee"
             }; color: ${
-              review.sentiment === "positive" ? "#2e7d32" : "#c62828"
+              review.status === "POSITIVE" ? "#2e7d32" : "#c62828"
             };">
-              ${review.sentiment === "positive" ? "Tích cực" : "Tiêu cực"}
+              ${review.status === "POSITIVE" ? "Tích cực" : "Tiêu cực"}
             </span>
           </div>
           <p style="margin: 0 0 10px 0; color: #495057; line-height: 1.6; font-size: 15px;">${

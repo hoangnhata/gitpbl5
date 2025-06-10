@@ -25,6 +25,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Autocomplete,
 } from "@mui/material";
 import {
   Edit as EditIcon,
@@ -49,6 +50,7 @@ import SockJS from "sockjs-client";
 import { Stomp } from "@stomp/stompjs";
 import CheckIcon from "@mui/icons-material/Check";
 import Rating from "@mui/material/Rating";
+import { analyzeSentiment } from "../api/sentimentAnalysis";
 
 const UserProfile = () => {
   const navigate = useNavigate();
@@ -63,6 +65,7 @@ const UserProfile = () => {
     email: "",
     phone: "",
     thumnailUrl: "", // Changed from thumbnailUrl to thumnailUrl to match API response
+    address: "", // Thêm address
   });
   const [bookedRooms, setBookedRooms] = useState([]);
   const [favoriteRooms, setFavoriteRooms] = useState([]);
@@ -100,6 +103,7 @@ const UserProfile = () => {
   });
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewError, setReviewError] = useState("");
+  const [countryOptions, setCountryOptions] = useState([]);
 
   const criteriaList = [
     { key: "cleanliness", label: "Vệ sinh", icon: "🧹" },
@@ -135,6 +139,7 @@ const UserProfile = () => {
             email: userData.email || "",
             phone: userData.phone || "",
             thumnailUrl: userData.thumnailUrl || "",
+            address: userData.address || "", // Thêm address
           });
           setHostRequestData((prev) => ({
             ...prev,
@@ -214,6 +219,7 @@ const UserProfile = () => {
       form.append("fullname", formData.fullname);
       form.append("email", formData.email);
       form.append("phone", formData.phone);
+      form.append("address", formData.address); // Thêm address
       if (selectedFile) {
         form.append("thumnail", selectedFile);
       }
@@ -232,6 +238,7 @@ const UserProfile = () => {
           email: updatedUserData.email,
           phone: updatedUserData.phone,
           thumnailUrl: updatedUserData.thumnailUrl,
+          address: updatedUserData.address, // Thêm address
         }));
         setPreviewUrl("");
         setSelectedFile(null);
@@ -338,7 +345,6 @@ const UserProfile = () => {
       !hostRequestData.fullname ||
       !hostRequestData.description ||
       !hostRequestData.languages ||
-      !hostRequestData.address ||
       !hostRequestData.experience
     ) {
       setHostRequestError("Vui lòng điền đầy đủ thông tin.");
@@ -474,24 +480,50 @@ const UserProfile = () => {
     setReviewLoading(true);
     setReviewError("");
     try {
+      console.log("Bắt đầu submit review");
+      console.log("Review form data:", reviewForm);
+      console.log("Criteria ratings:", criteriaRatings);
+
       // Validate đủ 6 tiêu chí và có bình luận
       if (
         Object.values(criteriaRatings).some((v) => v === 0) ||
         !reviewForm.comment.trim()
       ) {
+        console.log("Validation failed");
         setReviewError("Vui lòng đánh giá đủ 6 tiêu chí và nhập bình luận!");
         setReviewLoading(false);
         return;
       }
+
+      // Phân tích sentiment trước khi gửi review
+      console.log("Đang phân tích sentiment...");
+      const sentiment = await analyzeSentiment(reviewForm.comment);
+      console.log("Kết quả sentiment:", sentiment);
+
       const formData = new FormData();
       formData.append("comment", reviewForm.comment);
       formData.append("rating", calcAvgRating());
+      formData.append(
+        "status",
+        sentiment ? sentiment.toUpperCase() : "NEUTRAL"
+      );
       if (reviewForm.image) formData.append("image", reviewForm.image);
-      await axiosInstance.post(
+
+      console.log("FormData trước khi gửi:", {
+        comment: reviewForm.comment,
+        rating: calcAvgRating(),
+        status: sentiment ? sentiment.toUpperCase() : "NEUTRAL",
+        hasImage: !!reviewForm.image,
+      });
+
+      console.log("Đang gửi request đến API...");
+      const response = await axiosInstance.post(
         `/api/listings/reviews/${selectedBookingForReview.bookingId}`,
         formData,
         { headers: { "Content-Type": "multipart/form-data" } }
       );
+      console.log("Response từ API:", response.data);
+
       setBookedRooms((prev) =>
         prev.map((room) =>
           room.bookingId === selectedBookingForReview.bookingId
@@ -510,6 +542,8 @@ const UserProfile = () => {
         value: 0,
       });
     } catch (err) {
+      console.error("Lỗi khi submit review:", err);
+      console.error("Chi tiết lỗi:", err.response?.data);
       setReviewError(err.response?.data?.message || "Gửi đánh giá thất bại");
     } finally {
       setReviewLoading(false);
@@ -612,6 +646,15 @@ const UserProfile = () => {
                 name="phone"
                 label="Số điện thoại"
                 value={formData.phone}
+                onChange={handleChange}
+                disabled={loading}
+              />
+
+              <TextField
+                fullWidth
+                name="address"
+                label="Địa chỉ"
+                value={formData.address}
                 onChange={handleChange}
                 disabled={loading}
               />
@@ -1265,12 +1308,29 @@ const UserProfile = () => {
             value={hostRequestData.languages}
             onChange={handleHostRequestChange}
           />
-          <TextField
-            fullWidth
-            name="address"
-            label="Địa chỉ (Thành phố, Quốc gia)"
-            value={hostRequestData.address}
-            onChange={handleHostRequestChange}
+          <Autocomplete
+            options={countryOptions}
+            value={hostRequestData.address || ""}
+            onChange={(_, newValue) =>
+              setHostRequestData((prev) => ({
+                ...prev,
+                address: newValue || "",
+              }))
+            }
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Quốc gia"
+                placeholder="Chọn quốc gia..."
+                size="small"
+                fullWidth
+                sx={{ borderRadius: 2, bgcolor: "background.paper" }}
+                InputProps={{ ...params.InputProps, sx: { borderRadius: 2 } }}
+              />
+            )}
+            isOptionEqualToValue={(option, val) => option === val}
+            autoHighlight
+            clearOnEscape
           />
           <TextField
             fullWidth
@@ -1296,6 +1356,12 @@ const UserProfile = () => {
       </form>
     </Card>
   );
+
+  useEffect(() => {
+    axiosInstance.get("/api/countries").then((res) => {
+      setCountryOptions(res.data.result.map((c) => c.name));
+    });
+  }, []);
 
   return (
     <Container maxWidth="lg">

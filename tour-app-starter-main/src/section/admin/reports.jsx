@@ -62,6 +62,9 @@ export default function AdminReports() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const pageSize = 10;
+  const [reviewStatusStats, setReviewStatusStats] = useState([]);
+  const [loadingReviewStatus, setLoadingReviewStatus] = useState(false);
+  const [errorReviewStatus, setErrorReviewStatus] = useState(null);
 
   const statsData = [
     {
@@ -94,11 +97,7 @@ export default function AdminReports() {
     }
   ];
 
-  const recentTransactions = [
-    { id: 1, user: 'Lê Minh Khánh', amount: '₫4', type: 'Đặt phòng', date: '2025-03-20', status: 'Hoàn thành' },
-    { id: 2, user: 'Hoàng Minh Nhật', amount: '₫5', type: 'Hủy phòng', date: '2025-03-19', status: 'Đã hoàn tiền' },
-    { id: 3, user: 'Trần Phước Phú', amount: '₫6', type: 'Đặt phòng', date: '2025-03-18', status: 'Hoàn thành' }
-  ];
+
 
   const fetchUserStats = async () => {
     setLoadingUsers(true);
@@ -252,6 +251,24 @@ export default function AdminReports() {
       };
       fetchRevenueStats();
 
+      const fetchReviewStatusStats = async () => {
+        setLoadingReviewStatus(true);
+        setErrorReviewStatus(null);
+        try {
+          const res = await axiosInstance.get('/api/statistic/reviews/status');
+          setReviewStatusStats(res.data.result || []);
+        } catch (err) {
+          setErrorReviewStatus('Không thể tải dữ liệu đánh giá tích cực/tiêu cực');
+        } finally {
+          setLoadingReviewStatus(false);
+        }
+      };
+      fetchReviewStatusStats();
+
+      const reviewStatusLabels = reviewStatusStats.map(item => item.status === 'POSITIVE' ? 'Tích cực' : 'Tiêu cực');
+      const reviewStatusData = reviewStatusStats.map(item => item.persentage);
+      const reviewStatusColors = reviewStatusStats.map(item => item.status === 'POSITIVE' ? '#4caf50' : '#f44336');
+
       const newCharts = {
         revenue: createChart(revenueRef.current, 'line', {
           labels: revenueStats.map(item => item.day),
@@ -311,20 +328,32 @@ export default function AdminReports() {
           }
         }, charts.users),
         popular: createChart(popularRef.current, 'pie', {
-          labels: ['Villa', 'Căn hộ', 'Nhà gỗ'],
+          labels: reviewStatusLabels.length > 0 ? reviewStatusLabels : ['Tích cực', 'Tiêu cực'],
           datasets: [{
-            data: [1, 2, 3],
-            backgroundColor: ['#ffa726', '#ab47bc', '#29b6f6']
+            data: reviewStatusData.length > 0 ? reviewStatusData : [0, 0],
+            backgroundColor: reviewStatusColors.length > 0 ? reviewStatusColors : ['#4caf50', '#f44336']
           }]
         }, {
           plugins: {
             title: {
               display: true,
-              text: 'Phân bố loại chỗ ở',
+              text: 'Phân bố đánh giá Tích cực/Tiêu cực',
               font: { size: 16, weight: 'bold' }
             },
             legend: {
-              position: 'bottom'
+              position: 'bottom',
+              labels: {
+                font: { size: 14 },
+                color: '#333',
+                padding: 20
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return `${context.label}: ${context.parsed.toFixed(2)}%`;
+                }
+              }
             }
           }
         }, charts.popular),
@@ -427,6 +456,65 @@ export default function AdminReports() {
     setPage(value);
   };
 
+  useEffect(() => {
+    setLoadingReviewStatus(true);
+    setErrorReviewStatus(null);
+    axiosInstance.get('/api/statistic/reviews/status')
+      .then(res => setReviewStatusStats(res.data.result || []))
+      .catch(() => setErrorReviewStatus('Không thể tải dữ liệu đánh giá tích cực/tiêu cực'))
+      .finally(() => setLoadingReviewStatus(false));
+  }, []);
+
+  useEffect(() => {
+    if (!isCanvasReady) return;
+    if (loadingReviewStatus) return;
+    if (charts.popular) {
+      try { charts.popular.destroy(); } catch (e) {}
+    }
+    const reviewStatusLabels = reviewStatusStats.map(item => item.status === 'POSITIVE' ? 'Tích cực' : 'Tiêu cực');
+    const reviewStatusData = reviewStatusStats.map(item => item.persentage);
+    const reviewStatusColors = reviewStatusStats.map(item => item.status === 'POSITIVE' ? '#4caf50' : '#f44336');
+    const newPopularChart = createChart(popularRef.current, 'pie', {
+      labels: reviewStatusLabels.length > 0 ? reviewStatusLabels : ['Tích cực', 'Tiêu cực'],
+      datasets: [{
+        data: reviewStatusData.length > 0 ? reviewStatusData : [0, 0],
+        backgroundColor: reviewStatusColors.length > 0 ? reviewStatusColors : ['#4caf50', '#f44336']
+      }]
+    }, {
+      plugins: {
+        title: {
+          display: true,
+          text: 'Phân bố đánh giá Tích cực/Tiêu cực',
+          font: { size: 16, weight: 'bold' }
+        },
+        legend: {
+          position: 'bottom',
+          labels: {
+            font: { size: 14 },
+            color: '#333',
+            padding: 20
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return `${context.label}: ${context.parsed.toFixed(2)}%`;
+            }
+          }
+        }
+      }
+    }, null);
+    setCharts(prev => ({ ...prev, popular: newPopularChart }));
+  }, [isCanvasReady, reviewStatusStats, loadingReviewStatus]);
+
+  useEffect(() => {
+    return () => {
+      if (charts.popular) {
+        try { charts.popular.destroy(); } catch (e) {}
+      }
+    };
+  }, []);
+
   return (
     <Box sx={{ width: '100%', p: 3 }}>
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4 }}>
@@ -483,7 +571,7 @@ export default function AdminReports() {
         </Stack>
       </Stack>
 
-      <Grid container spacing={3} sx={{ mb: 4 }}>
+      {/* <Grid container spacing={3} sx={{ mb: 4 }}>
         {statsData.map((stat, index) => (
           <Grid item xs={12} sm={6} md={3} key={index}>
             <Card elevation={3}>
@@ -509,7 +597,7 @@ export default function AdminReports() {
             </Card>
           </Grid>
         ))}
-      </Grid>
+      </Grid> */}
 
       <Grid container spacing={4} sx={{ mb: 4 }}>
         <Grid item xs={12} md={8}>
@@ -531,8 +619,16 @@ export default function AdminReports() {
           </Paper>
         </Grid>
         <Grid item xs={12} md={6}>
-          <Paper elevation={3} sx={{ p: 3, height: 400 }}>
-            <canvas ref={popularRef}></canvas>
+          <Paper elevation={3} sx={{ p: 3, height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {loadingReviewStatus ? (
+              <Stack alignItems="center" sx={{ py: 4 }}>
+                <CircularProgress />
+              </Stack>
+            ) : errorReviewStatus ? (
+              <Typography color="error">{errorReviewStatus}</Typography>
+            ) : (
+              <canvas ref={popularRef}></canvas>
+            )}
           </Paper>
         </Grid>
         <Grid item xs={12} md={6}>

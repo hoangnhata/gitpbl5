@@ -105,13 +105,44 @@ export default function AdminUsers() {
     setEditMode(false);
   };
 
-  const handleSaveChanges = () => {
-    const updatedUsers = users.map(user => 
-      user.id === editedUser.id ? editedUser : user
-    );
-    setUsers(updatedUsers);
-    setShowSuccessAlert(true);
-    handleCloseDialog();
+  const handleSaveChanges = async () => {
+    if (!editedUser) return;
+    setLoading(true);
+    setError(null);
+    try {
+      let role = '';
+      let roles = [];
+      const currentType = getAccountType(editedUser.roles);
+      if (currentType === 'Chủ cho thuê') {
+        role = 'HOST';
+        roles = ['GUEST', 'HOST'];
+      } else if (currentType === 'Khách') {
+        role = 'GUEST';
+        roles = ['GUEST'];
+      } else {
+        setError('Không thể thay đổi vai trò ADMIN!');
+        setLoading(false);
+        return;
+      }
+      const payload = {
+        id: editedUser.id,
+        email: editedUser.email,
+        phone: editedUser.phone,
+        address: editedUser.address,
+        role: role
+      };
+      const response = await axiosInstance.put('/api/users/admin/change/profile', payload);
+      if (response.data?.result) {
+        setEditedUser(response.data.result);
+        setUsers((prev) => prev.map((u) => (u.id === editedUser.id ? response.data.result : u)));
+        setShowSuccessAlert(true);
+        handleCloseDialog();
+      }
+    } catch (err) {
+      setError('Không thể cập nhật thông tin người dùng!');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleStatusChange = async (event) => {
@@ -119,7 +150,6 @@ export default function AdminUsers() {
     const newIsActive = event.target.checked;
     try {
       setLoading(true);
-      // Gọi API PUT cập nhật trạng thái hoạt động
       const response = await axiosInstance.put(`/api/users/active/${editedUser.id}/${newIsActive}`);
       if (response.data?.result) {
         setEditedUser(response.data.result);
@@ -138,8 +168,10 @@ export default function AdminUsers() {
 
   const handleRoleChange = (event) => {
     let roles = [];
-    if (event.target.value === 'Admin') roles = ['GUEST', 'HOST', 'ADMIN'];
-    else if (event.target.value === 'Chủ cho thuê') roles = ['GUEST', 'HOST'];
+    if (event.target.value === 'Admin') {
+      setError('Không thể thay đổi vai trò ADMIN!');
+      return;
+    } else if (event.target.value === 'Chủ cho thuê') roles = ['GUEST', 'HOST'];
     else if (event.target.value === 'Khách') roles = ['GUEST'];
     setEditedUser({
       ...editedUser,
@@ -325,8 +357,7 @@ export default function AdminUsers() {
                 label="Họ tên"
                 name="fullname"
                 value={editedUser?.fullname || ''}
-                onChange={handleInputChange}
-                disabled={!editMode}
+                disabled
               />
             </Grid>
             <Grid item xs={12} md={6}>
