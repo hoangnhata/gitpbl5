@@ -110,15 +110,27 @@ export default function AdminUsers() {
     setLoading(true);
     setError(null);
     try {
-      // Chuẩn bị payload đúng format yêu cầu
+      let role = '';
+      let roles = [];
+      const currentType = getAccountType(editedUser.roles);
+      if (currentType === 'Chủ cho thuê') {
+        role = 'HOST';
+        roles = ['GUEST', 'HOST'];
+      } else if (currentType === 'Khách') {
+        role = 'GUEST';
+        roles = ['GUEST'];
+      } else {
+        setError('Không thể thay đổi vai trò ADMIN!');
+        setLoading(false);
+        return;
+      }
       const payload = {
         id: editedUser.id,
         email: editedUser.email,
         phone: editedUser.phone,
         address: editedUser.address,
-        role: getAccountType(editedUser.roles) === 'Admin' ? 'Admin' : (getAccountType(editedUser.roles) === 'Chủ cho thuê' ? 'Host' : 'Guest')
+        role: role
       };
-      // Gọi API PUT
       const response = await axiosInstance.put('/api/users/admin/change/profile', payload);
       if (response.data?.result) {
         setEditedUser(response.data.result);
@@ -138,7 +150,6 @@ export default function AdminUsers() {
     const newIsActive = event.target.checked;
     try {
       setLoading(true);
-      // Gọi API PUT cập nhật trạng thái hoạt động
       const response = await axiosInstance.put(`/api/users/active/${editedUser.id}/${newIsActive}`);
       if (response.data?.result) {
         setEditedUser(response.data.result);
@@ -157,8 +168,10 @@ export default function AdminUsers() {
 
   const handleRoleChange = (event) => {
     let roles = [];
-    if (event.target.value === 'Admin') roles = ['GUEST', 'HOST', 'ADMIN'];
-    else if (event.target.value === 'Chủ cho thuê') roles = ['GUEST', 'HOST'];
+    if (event.target.value === 'Admin') {
+      setError('Không thể thay đổi vai trò ADMIN!');
+      return;
+    } else if (event.target.value === 'Chủ cho thuê') roles = ['GUEST', 'HOST'];
     else if (event.target.value === 'Khách') roles = ['GUEST'];
     setEditedUser({
       ...editedUser,

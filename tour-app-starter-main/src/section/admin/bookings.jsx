@@ -179,7 +179,7 @@ export default function AdminBookings() {
     <Box sx={{ p: 3 }}>
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4 }}>
         <Typography variant="h4" fontWeight={600}>
-          Quản lý đặt phòng
+          Xem danh sách đặt phòng
         </Typography>
       </Stack>
 
