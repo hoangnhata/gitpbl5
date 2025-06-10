@@ -647,7 +647,7 @@ const UserProfile = () => {
                         room.primaryUrl
                           ? room.primaryUrl.startsWith("http")
                             ? room.primaryUrl
-                            : `http://localhost:8080/${room.primaryUrl}`
+                            : `http://175.41.233.105:8080/${room.primaryUrl}`
                           : "/default-room.jpg"
                       }
                       alt={room.title}
@@ -849,7 +849,7 @@ const UserProfile = () => {
                         room.primaryUrl
                           ? room.primaryUrl.startsWith("http")
                             ? room.primaryUrl
-                            : `http://localhost:8080/${room.primaryUrl}`
+                            : `http://175.41.233.105:8080/${room.primaryUrl}`  
                           : "/default-room.jpg"
                       }
                       alt={room.title}

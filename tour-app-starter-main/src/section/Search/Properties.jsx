@@ -18,7 +18,7 @@ const settings = {
 const getImageUrl = (img) => {
   if (!img) return "/default-image.png";
   if (img.startsWith("http")) return img;
-  return `http://localhost:8080/${img}`;
+  return `http://175.41.233.105:8080/${img}`;
 };
 
 const Properties = ({ properties }) => {

@@ -7,7 +7,7 @@ const CountryFilter = ({ value, onChange }) => {
 
   useEffect(() => {
     const fetchCountries = async () => {
-      const res = await axios.get("http://localhost:8080/api/countries");
+      const res = await axios.get("http://175.41.233.105:8080/api/countries");
       setOptions(res.data.result.map((item) => item.name));
     };
     fetchCountries();

@@ -86,7 +86,7 @@ export default function AdminProperties() {
               owner: ownerName,
               status: item.access ? 'Đã kích hoạt' : 'Đang chờ kích hoạt',
               rating: item.avgRating || 0,
-              images: item.images?.map(img => img.startsWith('uploads/') ? `http://localhost:8080/${img}` : img) || [],
+              images: item.images?.map(img => img.startsWith('uploads/') ? `http://175.41.233.105:8080/${img}` : img) || [],
               description: item.description || '',
               amenities: item.amenities || [],
               createdAt: item.startDate || '',

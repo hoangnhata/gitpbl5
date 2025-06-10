@@ -203,7 +203,7 @@ export default function HostPage() {
   }, [selectedPerson]);
 
   useEffect(() => {
-    const socket = new SockJS("http://localhost:8080/ws");
+    const socket = new SockJS("http://175.41.233.105:8080/ws");
     stompClient.current = Stomp.over(socket);
 
     stompClient.current.connect(
@@ -533,13 +533,13 @@ export default function HostPage() {
   const getImageUrl = (img) => {
     if (!img) return "/default-image.png"; // fallback nếu không có ảnh
     if (img.startsWith("http")) return img;
-    return `http://localhost:8080/${img}`; // thay bằng domain backend thật của bạn
+    return `http://175.41.233.105:8080/${img}`; // thay bằng domain backend thật của bạn
   };
 
   const getAmenityImageUrl = (url) => {
     if (!url) return "/default-image.png";
     if (url.startsWith("http")) return url;
-    return `http://localhost:8080${url}`;
+    return `http://175.41.233.105:8080${url}`;
   };
 
   const MAX_DESC = 180;

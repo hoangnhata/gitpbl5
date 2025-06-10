@@ -37,7 +37,7 @@ export default function CardView(props) {
   // Hàm gọi API để lấy dữ liệu các tab
   const fetchTabsData = async () => {
     try {
-      const response = await fetch("http://localhost:8080/api/categories");
+      const response = await fetch("http://175.41.233.105:8080/api/categories");
       const data = await response.json();
       // Thêm tab "Tất cả danh mục" vào đầu mảng
       const allCategoriesTab = {
@@ -55,9 +55,9 @@ export default function CardView(props) {
   const fetchProperties = async (id) => {
     setLoading(true);
     try {
-      let url = "http://localhost:8080/api/listings";
+      let url = "http://175.41.233.105:8080/api/listings";
       if (id !== "all") {
-        url = `http://localhost:8080/api/listings/filter?category_id=${id}`;
+        url = `http://175.41.233.105:8080/api/listings/filter?category_id=${id}`;
       }
       const response = await fetch(url);
       const data = await response.json();
@@ -128,7 +128,7 @@ export default function CardView(props) {
                   />
                 ) : (
                   <img
-                    src={`http://localhost:8080${tab.thumnailUrl}`}
+                    src={`http://175.41.233.105:8080${tab.thumnailUrl}`}
                     alt={tab.name}
                     style={{
                       width: "30px",

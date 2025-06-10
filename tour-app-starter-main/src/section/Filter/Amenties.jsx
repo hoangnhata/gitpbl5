@@ -17,7 +17,7 @@ const Amenities = ({ value = [], onChange, showIcon }) => {
   // Lấy danh sách amenities từ API khi mount
   useEffect(() => {
     const fetchAmenities = async () => {
-      const res = await axios.get("http://localhost:8080/api/amenities");
+      const res = await axios.get("http://175.41.233.105:8080/api/amenities");
       setAmenitiesList(res.data.result);
     };
     fetchAmenities();
@@ -59,7 +59,7 @@ const Amenities = ({ value = [], onChange, showIcon }) => {
             >
               {showIcon && amenity.thumnailUrl && (
                 <Avatar
-                  src={`http://localhost:8080${amenity.thumnailUrl}`}
+                  src={`http://175.41.233.105:8080${amenity.thumnailUrl}`}
                   alt={amenity.name}
                   sx={{ width: 25, height: 25, bgcolor: "#fff" }}
                   variant="rounded"

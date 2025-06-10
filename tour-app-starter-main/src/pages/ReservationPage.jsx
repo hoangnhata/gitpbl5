@@ -414,7 +414,7 @@ const ReservationPage = () => {
                   src={
                     room.primaryThumbnail.startsWith("http")
                       ? room.primaryThumbnail
-                      : `http://localhost:8080/${room.primaryThumbnail}`
+                      : `http://175.41.233.105:8080/${room.primaryThumbnail}`
                   }
                   alt={room.title}
                   sx={{
@@ -529,7 +529,7 @@ const ReservationPage = () => {
                     roomData?.images?.[0]
                       ? roomData.images[0].startsWith("http")
                         ? roomData.images[0]
-                        : `http://localhost:8080/${roomData.images[0]}`
+                        : `http://175.41.233.105:8080/${roomData.images[0]}`
                       : ""
                   }
                   alt="Room Preview"

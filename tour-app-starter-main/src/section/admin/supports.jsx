@@ -45,7 +45,7 @@ export default function AdminMessages() {
     axiosInstance.get("/api/chat/persons").then((res) => {
       setPersons(res.data.result || []);
     });
-    const socket = new SockJS("http://localhost:8080/ws");
+    const socket = new SockJS("http://175.41.233.105:8080/ws");
     stompClient.current = Stomp.over(socket);
 
     stompClient.current.connect(

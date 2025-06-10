@@ -16,7 +16,7 @@ const Home = () => {
   useEffect(() => {
     // Fetch tất cả phòng khi load trang
     const fetchDefaultProperties = async () => {
-      const res = await axios.get("http://localhost:8080/api/listings");
+      const res = await axios.get("http://175.41.233.105:8080/api/listings");
       setDefaultProperties(res.data.result);
     };
     fetchDefaultProperties();

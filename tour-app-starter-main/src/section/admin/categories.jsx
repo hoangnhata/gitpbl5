@@ -78,7 +78,7 @@ export default function AdminCategories() {
         isActive: category.isActive ?? true,
         position: category.position || 1,
         thumbnail: null,
-        preview: category.thumnailUrl ? (category.thumnailUrl.startsWith('http') ? category.thumnailUrl : `http://localhost:8080${category.thumnailUrl}`) : ''
+        preview: category.thumnailUrl ? (category.thumnailUrl.startsWith('http') ? category.thumnailUrl : `http://175.41.233.105:8080${category.thumnailUrl}`) : ''
       });
     } else {
       setFormData({ name: '', description: '', isActive: true, position: 1, thumbnail: null, preview: '' });
@@ -227,7 +227,7 @@ export default function AdminCategories() {
                 <Stack spacing={2}>
                   <Box
                     component="img"
-                    src={category.thumnailUrl ? (category.thumnailUrl.startsWith('http') ? category.thumnailUrl : `http://localhost:8080${category.thumnailUrl}`) : ''}
+                    src={category.thumnailUrl ? (category.thumnailUrl.startsWith('http') ? category.thumnailUrl : `http://175.41.233.105:8080${category.thumnailUrl}`) : ''}
                     alt={category.name}
                     sx={{
                       width: '100%',
@@ -284,7 +284,7 @@ export default function AdminCategories() {
           <Stack spacing={3} sx={{ mt: 2 }}>
             <Box
               component="img"
-              src={newIcon || (selectedCategory?.thumnailUrl ? (selectedCategory.thumnailUrl.startsWith('http') ? selectedCategory.thumnailUrl : `http://localhost:8080${selectedCategory.thumnailUrl}`) : '')}
+              src={newIcon || (selectedCategory?.thumnailUrl ? (selectedCategory.thumnailUrl.startsWith('http') ? selectedCategory.thumnailUrl : `http://175.41.233.105:8080${selectedCategory.thumnailUrl}`) : '')}
               alt="Current icon"
               sx={{
                 width: '100%',

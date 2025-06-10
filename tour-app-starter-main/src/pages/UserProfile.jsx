@@ -396,7 +396,7 @@ const UserProfile = () => {
 
   // Kết nối websocket
   useEffect(() => {
-    const socket = new SockJS("http://localhost:8080/ws");
+    const socket = new SockJS("http://175.41.233.105:8080/ws");
     stompClient.current = Stomp.over(socket);
 
     stompClient.current.connect(
@@ -827,7 +827,7 @@ const UserProfile = () => {
                         room.primaryUrl
                           ? room.primaryUrl.startsWith("http")
                             ? room.primaryUrl
-                            : `http://localhost:8080/${room.primaryUrl}`
+                            : `http://175.41.233.105:8080/${room.primaryUrl}`
                           : "/default-room.jpg"
                       }
                       alt={room.title}
@@ -1163,7 +1163,7 @@ const UserProfile = () => {
                         room.primaryThumnail
                           ? room.primaryThumnail.startsWith("http")
                             ? room.primaryThumnail
-                            : `http://localhost:8080/${room.primaryThumnail}`
+                            : `http://175.41.233.105:8080/${room.primaryThumnail}`
                           : "/default-room.jpg"
                       }
                       alt={room.title}

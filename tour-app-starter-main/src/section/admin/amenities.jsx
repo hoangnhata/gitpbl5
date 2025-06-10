@@ -223,7 +223,7 @@ export default function AdminAmenities() {
                 <Stack spacing={2}>
                   <Box
                     component="img"
-                    src={amenity.thumnailUrl ? (amenity.thumnailUrl.startsWith('http') ? amenity.thumnailUrl : `http://localhost:8080${amenity.thumnailUrl}`) : ''}
+                    src={amenity.thumnailUrl ? (amenity.thumnailUrl.startsWith('http') ? amenity.thumnailUrl : `http://175.41.233.105:8080${amenity.thumnailUrl}`) : ''}
                     alt={amenity.name}
                     sx={{
                       width: '100%',
@@ -281,7 +281,7 @@ export default function AdminAmenities() {
           <Stack spacing={3} sx={{ mt: 2 }}>
             <Box
               component="img"
-              src={newIcon || (selectedAmenity?.thumnailUrl ? (selectedAmenity.thumnailUrl.startsWith('http') ? selectedAmenity.thumnailUrl : `http://localhost:8080${selectedAmenity.thumnailUrl}`) : '')}
+              src={newIcon || (selectedAmenity?.thumnailUrl ? (selectedAmenity.thumnailUrl.startsWith('http') ? selectedAmenity.thumnailUrl : `http://175.41.233.105:8080${selectedAmenity.thumnailUrl}`) : '')}
               alt="Current icon"
               sx={{
                 width: '100%',

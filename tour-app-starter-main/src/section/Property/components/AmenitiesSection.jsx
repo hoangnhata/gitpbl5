@@ -15,7 +15,7 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 
 // Add your backend URL here - replace with your actual backend URL
-const BASE_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8080";
+const BASE_URL = import.meta.env.VITE_BACKEND_URL || "http://175.41.233.105:8080";
 
 const AmenitiesList = ({ items, inModal }) => (
   <Grid container spacing={2.5}>

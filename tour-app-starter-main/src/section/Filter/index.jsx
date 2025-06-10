@@ -26,7 +26,7 @@ const Filter = () => {
   // Khi mount, lấy min/max giá từ API
   useEffect(() => {
     const fetchPriceRange = async () => {
-      const res = await axios.get("http://localhost:8080/api/listings");
+      const res = await axios.get("http://175.41.233.105:8080/api/listings");
       const prices = res.data.result.map((item) => item.price);
       const min = Math.min(...prices);
       const max = Math.max(...prices);

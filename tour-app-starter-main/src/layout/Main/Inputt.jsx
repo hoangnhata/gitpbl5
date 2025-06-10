@@ -26,7 +26,7 @@ const Inputt = () => {
 
   const handleSearch = async () => {
     try {
-      let url = "http://localhost:8080/api/listings/search?";
+      let url = "http://175.41.233.105:8080/api/listings/search?";
       const params = new URLSearchParams();
       if (keyword) params.append("keyword", keyword);
       const response = await axios.get(`${url}${params.toString()}`);
